@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiMaster — By Evolua+ Profissões</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Firebase SDKs (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="assets/logo.png" alt="DigiMaster" onerror="this.style.display='none'" />
+    </div>
+    <h1 class="login-title">DigiMaster</h1>
+    <p class="login-subtitle">by Evolua+ Profissões</p>
+    <p class="login-desc">Faça login para acessar seus treinos e estatísticas sincronizadas.</p>
+    <button class="login-btn" id="loginBtn" onclick="loginWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" />
+      Entrar com Google
+    </button>
+    <p class="login-note">Seus dados ficam salvos na nuvem 🔒</p>
+  </div>
+</div>
+
+<!-- APP (oculto até login) -->
+<div id="appContainer" style="display:none">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-wrapper">
+        <img src="assets/logo.png" alt="Evolua+ Profissões" class="logo-img" id="logoImg" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'" />
+        <div class="logo-fallback" id="logoFallback">E+</div>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">DigiMaster</span>
+        <span class="brand-sub">by Evolua+ Profissões</span>
+      </div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-screen="home">Início</button>
+      <button class="nav-btn" data-screen="practice">Praticar</button>
+      <button class="nav-btn" data-screen="stats">Estatísticas</button>
+      <button class="nav-btn" data-screen="about">Sobre</button>
+    </nav>
+    <!-- User info no header -->
+    <div class="header-user" id="headerUser" style="display:none">
+      <img class="header-avatar" id="headerAvatar" src="" alt="avatar" onerror="this.style.display='none'" />
+      <span class="header-username" id="headerName"></span>
+      <button class="btn-logout" onclick="logout()" title="Sair">⏻ Sair</button>
+    </div>
+  </div>
+</header>
+
+<!-- SCREEN: HOME -->
+<div class="screen active" id="screen-home">
+  <div class="home-hero">
+    <div class="hero-content">
+      <div class="hero-school-logo">
+        <img src="assets/logo.png" alt="Evolua+ Profissões" onerror="this.style.display='none'" />
+      </div>
+      <div class="badge-pill">🚀 Aprenda a digitar como um profissional</div>
+      <h1 class="hero-title">Domine a<br/><span class="accent">Digitação</span><br/>em tempo real</h1>
+      <p class="hero-desc">Exercícios progressivos do básico ao avançado, com métricas precisas, teclado visual interativo e textos sobre tecnologia e informática.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="navigateTo('practice')">Começar agora →</button>
+        <button class="btn-secondary" onclick="navigateTo('stats')">Ver progresso</button>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="wpm-ring">
+        <svg viewBox="0 0 120 120" class="ring-svg">
+          <defs>
+            <linearGradient id="rgbGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#ff2d78"/>
+              <stop offset="25%"  stop-color="#a855f7"/>
+              <stop offset="50%"  stop-color="#00cfff"/>
+              <stop offset="75%"  stop-color="#00ff88"/>
+              <stop offset="100%" stop-color="#ff2d78"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="50" class="ring-bg"/>
+          <circle cx="60" cy="60" r="50" class="ring-fill" id="heroRing" stroke-dasharray="0 314"/>
+        </svg>
+        <div class="ring-label">
+          <span class="ring-val" id="heroWpm">0</span>
+          <span class="ring-unit">WPM</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-levels">
+    <h2 class="section-title">Escolha seu nível</h2>
+    <div class="level-grid">
+      <div class="level-card" data-level="basico" onclick="startLevel('basico')">
+        <div class="level-icon">🌱</div>
+        <h3>Básico</h3>
+        <p>Letras e sílabas simples. Ideal para quem está começando do zero.</p>
+        <div class="level-meta"><span>~20 WPM</span></div>
+      </div>
+      <div class="level-card" data-level="intermediario" onclick="startLevel('intermediario')">
+        <div class="level-icon">⚡</div>
+        <h3>Intermediário</h3>
+        <p>Palavras e frases. Desenvolva velocidade e precisão.</p>
+        <div class="level-meta"><span>~40 WPM</span></div>
+      </div>
+      <div class="level-card" data-level="avancado" onclick="startLevel('avancado')">
+        <div class="level-icon">🔥</div>
+        <h3>Avançado</h3>
+        <p>Textos completos sobre tecnologia. Velocidade profissional.</p>
+        <div class="level-meta"><span>60+ WPM</span></div>
+      </div>
+      <div class="level-card" data-level="numeros" onclick="startLevel('numeros')">
+        <div class="level-icon">🔢</div>
+        <h3>Números & Símbolos</h3>
+        <p>Teclado numérico e caracteres especiais. Essencial para planilhas.</p>
+        <div class="level-meta"><span>Especial</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-tips">
+    <h2 class="section-title">💡 Curiosidades Tech</h2>
+    <div class="tips-carousel" id="tipsCarousel"></div>
+  </div>
+</div>
+
+<!-- SCREEN: PRACTICE -->
+<div class="screen" id="screen-practice">
+  <div class="practice-wrapper">
+
+    <!-- Controls Bar -->
+    <div class="practice-controls">
+      <div class="control-group">
+        <label>Nível</label>
+        <select id="levelSelect" onchange="changeLevel()">
+          <option value="basico">🌱 Básico</option>
+          <option value="intermediario">⚡ Intermediário</option>
+          <option value="avancado">🔥 Avançado</option>
+          <option value="numeros">🔢 Números</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Modo</label>
+        <select id="modeSelect" onchange="changeMode()">
+          <option value="words">Palavras</option>
+          <option value="text">Texto</option>
+          <option value="time">Tempo livre</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Duração</label>
+        <select id="durationSelect">
+          <option value="30">30s</option>
+          <option value="60" selected>60s</option>
+          <option value="120">2min</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetSession()">↺ Reiniciar</button>
+    </div>
+
+    <!-- Live Stats Bar -->
+    <div class="live-stats">
+      <div class="stat-chip">
+        <span class="stat-chip-label">Velocidade</span>
+        <span class="stat-chip-val" id="liveWpm">0 <small>WPM</small></span>
+      </div>
+      <div class="stat-chip accent">
+        <span class="stat-chip-label">Precisão</span>
+        <span class="stat-chip-val" id="liveAcc">100 <small>%</small></span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-chip-label">Erros</span>
+        <span class="stat-chip-val error-val" id="liveErrors">0</span>
+      </div>
+      <div class="stat-chip timer-chip">
+        <span class="stat-chip-label">Tempo</span>
+        <span class="stat-chip-val" id="liveTimer">60s</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-chip-label">Palavras</span>
+        <span class="stat-chip-val" id="liveWords">0</span>
+      </div>
+    </div>
+
+    <!-- Text Display -->
+    <div class="text-display-container">
+      <div class="text-display" id="textDisplay"></div>
+      <input type="text" class="hidden-input" id="typingInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <div class="click-to-start" id="clickToStart" onclick="focusInput()">
+        <span>▶ Clique aqui para começar a digitar</span>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="result-panel hidden" id="resultPanel">
+      <h2>🎉 Resultado</h2>
+      <div class="result-grid">
+        <div class="result-item">
+          <span class="result-label">Velocidade</span>
+          <span class="result-val" id="resWpm">—</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Precisão</span>
+          <span class="result-val" id="resAcc">—</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Erros</span>
+          <span class="result-val" id="resErrors">—</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Palavras</span>
+          <span class="result-val" id="resWords">—</span>
+        </div>
+      </div>
+      <div class="result-feedback" id="resultFeedback"></div>
+      <div class="result-actions">
+        <button class="btn-primary" onclick="resetSession()">Tentar novamente</button>
+        <button class="btn-secondary" onclick="navigateTo('stats')">Ver estatísticas</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- VIRTUAL KEYBOARD -->
+  <div class="vkb-wrapper" id="vkbWrapper">
+    <!-- Alças de redimensionamento -->
+    <div class="vkb-resize-handle vkb-resize-top"  id="vkbResizeTop"></div>
+    <div class="vkb-resize-handle vkb-resize-left" id="vkbResizeLeft"></div>
+    <div class="vkb-resize-handle vkb-resize-right"id="vkbResizeRight"></div>
+    <div class="vkb-resize-handle vkb-resize-bl"   id="vkbResizeBL"></div>
+    <div class="vkb-resize-handle vkb-resize-br"   id="vkbResizeBR"></div>
+    <div class="vkb-header" id="vkbHeader">
+      <span class="vkb-title">⌨️ Teclado Virtual <span class="vkb-badge" id="vkbBadge">FIXO</span></span>
+      <div class="vkb-controls">
+        <button class="vkb-btn" id="vkbDockBtn" onclick="dockVkb()" title="Fixar na base">⊡</button>
+        <button class="vkb-btn" onclick="toggleVkb()" title="Minimizar/Expandir">—</button>
+      </div>
+    </div>
+    <div class="vkb-body" id="vkbBody">
+      <div class="vkb-keys" id="vkbKeys"></div>
+      <div class="vkb-legend">
+        <span class="legend-item home">🏠 Posição home</span>
+        <span class="legend-item next-key">→ Próxima tecla</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: STATS -->
+<div class="screen" id="screen-stats">
+  <div class="stats-wrapper">
+    <h2 class="section-title">📊 Suas Estatísticas</h2>
+
+    <div class="stats-summary">
+      <div class="summary-card">
+        <div class="summary-icon">🏆</div>
+        <div class="summary-info">
+          <span class="summary-label">Melhor WPM</span>
+          <span class="summary-val" id="statBestWpm">—</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📈</div>
+        <div class="summary-info">
+          <span class="summary-label">Média WPM</span>
+          <span class="summary-val" id="statAvgWpm">—</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">🎯</div>
+        <div class="summary-info">
+          <span class="summary-label">Precisão Média</span>
+          <span class="summary-val" id="statAvgAcc">—</span>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">⏱️</div>
+        <div class="summary-info">
+          <span class="summary-label">Sessões</span>
+          <span class="summary-val" id="statSessions">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h3>Evolução de Velocidade (últimas 20 sessões)</h3>
+      <div class="chart-container">
+        <canvas id="wpmChart"></canvas>
+        <div class="chart-empty" id="chartEmpty">Nenhuma sessão registrada ainda.<br/>Vá para <b>Praticar</b> para começar!</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h3>Distribuição de Precisão</h3>
+      <div class="acc-bars" id="accBars"></div>
+    </div>
+
+    <div class="history-section">
+      <h3>Histórico de Sessões</h3>
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr><th>#</th><th>Data</th><th>Nível</th><th>WPM</th><th>Precisão</th><th>Erros</th></tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="history-empty" id="historyEmpty">Nenhuma sessão ainda.</div>
+      </div>
+    </div>
+
+    <div class="stats-actions">
+      <button class="btn-danger" onclick="clearStats()">🗑️ Apagar histórico</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: ABOUT -->
+<div class="screen" id="screen-about">
+  <div class="about-wrapper">
+    <div class="about-hero">
+      <img src="assets/logo.png" alt="Evolua+" class="about-logo" onerror="this.style.display='none'" />
+      <h2>Sobre o DigiMaster</h2>
+      <p>Uma ferramenta educacional desenvolvida pela <strong>Evolua+ Profissões</strong> para auxiliar estudantes a desenvolverem habilidades de digitação de forma progressiva e eficiente.</p>
+    </div>
+    <div class="about-features">
+      <div class="feature-item">
+        <span>🎯</span>
+        <div><h4>Exercícios Progressivos</h4><p>Do básico ao avançado, cada nível foi cuidadosamente desenvolvido para garantir evolução contínua.</p></div>
+      </div>
+      <div class="feature-item">
+        <span>📊</span>
+        <div><h4>Métricas em Tempo Real</h4><p>WPM, precisão, erros e progresso monitorados a cada tecla pressionada.</p></div>
+      </div>
+      <div class="feature-item">
+        <span>⌨️</span>
+        <div><h4>Teclado Visual Interativo</h4><p>Teclado virtual móvel e redimensionável que indica a próxima tecla a ser pressionada.</p></div>
+      </div>
+      <div class="feature-item">
+        <span>📰</span>
+        <div><h4>Textos sobre Tecnologia</h4><p>Pratique com notícias e curiosidades reais sobre informática, IA e o mundo digital.</p></div>
+      </div>
+    </div>
+    <div class="about-tips-section">
+      <h3>Dicas para digitar melhor</h3>
+      <ul class="tips-list">
+        <li>Mantenha os dedos indicadores nas teclas <kbd>F</kbd> e <kbd>J</kbd> (posição home).</li>
+        <li>Não olhe para o teclado — use o teclado virtual como guia visual.</li>
+        <li>Prefira precisão à velocidade no início; velocidade vem com prática.</li>
+        <li>Pratique pelo menos 15 minutos por dia para resultados em 2 semanas.</li>
+        <li>Use todos os dedos — evite digitar só com dois dedos.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- fim appContainer -->
+
+<script src="js/data.js"></script>
+<script src="js/keyboard.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
