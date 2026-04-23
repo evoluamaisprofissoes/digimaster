@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DigiMaster — By Evolua+ Profissões</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-wrapper">
+        <img src="assets/logo.png" alt="Evolua+ Profissões" class="logo-img" id="logoImg" onerror="this.style.display='none';document.getElementById('logoFallback').style.display='flex'" />
+        <div class="logo-fallback" id="logoFallback">E+</div>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">DigiMaster</span>
+        <span class="brand-sub">by Evolua+ Profissões</span>
+      </div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-screen="home">Início</button>
+      <button class="nav-btn" data-screen="lessons">Lições</button>
+      <button class="nav-btn" data-screen="practice">Praticar</button>
+      <button class="nav-btn" data-screen="ranking">🏆 Ranking</button>
+      <button class="nav-btn" data-screen="stats">Estatísticas</button>
+      <button class="nav-btn" id="adminNavBtn" data-screen="admin" style="display:none">👨‍🏫 Painel</button>
+      <button class="nav-btn" data-screen="about">Sobre</button>
+    </nav>
+    <div id="authArea">
+      <button class="btn-login" onclick="openAuthModal('login')">Entrar / Cadastrar</button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== SCREEN: HOME ===== -->
+<div class="screen active" id="screen-home">
+  <div class="home-wrapper">
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-badge">⌨️ Treinamento Profissional</div>
+        <h1 class="hero-title">Domine a<br><span class="accent">Digitação</span></h1>
+        <p class="hero-desc">Desenvolva velocidade e precisão com exercícios progressivos. Do básico ao avançado, em português.</p>
+        <div class="hero-actions">
+          <button class="btn-primary" onclick="navigateTo('lessons')">Começar Agora</button>
+          <button class="btn-secondary" onclick="navigateTo('practice')">Prática Livre</button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="wpm-ring-container">
+          <svg class="wpm-ring" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="50" class="ring-bg"/>
+            <circle cx="55" cy="55" r="50" class="ring-fill" id="heroRing" stroke-dasharray="0 314"/>
+          </svg>
+          <div class="wpm-ring-label">
+            <span class="wpm-val" id="heroWpm">0</span>
+            <span class="wpm-unit">WPM</span>
+            <span class="wpm-sub">melhor</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glossário / Siglas -->
+    <div class="glossary-section">
+      <h3 class="section-title">📖 O que significa cada sigla?</h3>
+      <div class="glossary-grid">
+        <div class="glossary-card">
+          <div class="glossary-abbr">WPM</div>
+          <div class="glossary-full">Words Per Minute</div>
+          <div class="glossary-desc">Palavras por minuto — mede sua velocidade. Uma "palavra" = 5 caracteres. Meta iniciante: 30 WPM. Profissional: 60+ WPM.</div>
+        </div>
+        <div class="glossary-card">
+          <div class="glossary-abbr">ACC</div>
+          <div class="glossary-full">Accuracy (Precisão)</div>
+          <div class="glossary-desc">Percentual de teclas corretas. 95%+ é excelente. Menos de 80% significa muitos erros — priorize precisão antes da velocidade.</div>
+        </div>
+        <div class="glossary-card">
+          <div class="glossary-abbr">XP</div>
+          <div class="glossary-full">Experience Points</div>
+          <div class="glossary-desc">Pontos de experiência ganhos ao completar lições. Quanto mais difícil a lição, mais XP você acumula.</div>
+        </div>
+        <div class="glossary-card">
+          <div class="glossary-abbr">Home Row</div>
+          <div class="glossary-full">Fileira Inicial</div>
+          <div class="glossary-desc">A fileira do meio do teclado (ASDF — JKL). É a posição base dos dedos. As teclas F e J têm relevo para você encontrá-las sem olhar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Níveis -->
+    <div class="levels-section">
+      <h3 class="section-title">🎯 Escolha seu nível</h3>
+      <div class="levels-grid">
+        <div class="level-card" onclick="startLevel('basico')">
+          <div class="level-icon">🌱</div>
+          <h4>Básico</h4>
+          <p>Posição home, teclas fundamentais e primeiras palavras</p>
+          <div class="level-target">Meta: 20 WPM</div>
+        </div>
+        <div class="level-card" onclick="startLevel('intermediario')">
+          <div class="level-icon">⚡</div>
+          <h4>Intermediário</h4>
+          <p>Frases completas, acentos e textos naturais</p>
+          <div class="level-target">Meta: 40 WPM</div>
+        </div>
+        <div class="level-card" onclick="startLevel('avancado')">
+          <div class="level-icon">🔥</div>
+          <h4>Avançado</h4>
+          <p>Textos longos sobre tecnologia e negócios</p>
+          <div class="level-target">Meta: 60 WPM</div>
+        </div>
+        <div class="level-card" onclick="startLevel('numeros')">
+          <div class="level-icon">🔢</div>
+          <h4>Números</h4>
+          <p>Teclado numérico, datas, telefones e dados</p>
+          <div class="level-target">Meta: 30 WPM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips Carousel -->
+    <div class="tips-section">
+      <h3 class="section-title">💡 Sabia que...</h3>
+      <div class="tips-carousel" id="tipsCarousel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: LESSONS ===== -->
+<div class="screen" id="screen-lessons">
+  <div class="lessons-wrapper">
+    <div class="lessons-header">
+      <h2>Trilha de Aprendizado</h2>
+      <p>Lições progressivas do zero ao profissional</p>
+    </div>
+    <div class="lesson-tabs">
+      <button class="lesson-tab active" data-tab="basico">🌱 Básico</button>
+      <button class="lesson-tab" data-tab="intermediario">⚡ Intermediário</button>
+      <button class="lesson-tab" data-tab="avancado">🔥 Avançado</button>
+      <button class="lesson-tab" data-tab="numeros">🔢 Números</button>
+    </div>
+    <div id="lessonsPanels"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: PRACTICE ===== -->
+<div class="screen" id="screen-practice">
+  <!-- Active Lesson Banner -->
+  <div class="active-lesson-banner" id="activeLessonBanner">
+    <span class="alb-icon" id="albIcon">📖</span>
+    <div class="alb-info">
+      <div class="alb-title" id="albTitle">Lição ativa</div>
+      <div class="alb-sub" id="albSub"></div>
+    </div>
+    <button class="alb-close" onclick="clearActiveLesson();resetSession()">✕ Sair da lição</button>
+  </div>
+
+  <div class="practice-wrapper">
+    <!-- Controls -->
+    <div class="controls-bar">
+      <div class="control-group">
+        <label>Nível</label>
+        <select id="levelSelect" onchange="changeLevel()">
+          <option value="basico">🌱 Básico</option>
+          <option value="intermediario" selected>⚡ Intermediário</option>
+          <option value="avancado">🔥 Avançado</option>
+          <option value="numeros">🔢 Números</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Duração</label>
+        <select id="durationSelect" onchange="resetSession()">
+          <option value="30">30s</option>
+          <option value="60" selected>1 min</option>
+          <option value="120">2 min</option>
+          <option value="300">5 min</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetSession()">↺ Novo texto</button>
+    </div>
+
+    <!-- Live Stats -->
+    <div class="live-stats-bar">
+      <div class="stat-chip">
+        <div class="stat-chip-val" id="liveWpm">0 <small>WPM</small></div>
+        <div class="stat-chip-label" title="Words Per Minute — Palavras por minuto digitadas">WPM ⓘ</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-chip-val" id="liveAcc">100 <small>%</small></div>
+        <div class="stat-chip-label" title="Accuracy — Percentual de teclas corretas">Precisão ⓘ</div>
+      </div>
+      <div class="stat-chip timer-chip">
+        <div class="stat-chip-val" id="liveTimer">60s</div>
+        <div class="stat-chip-label">Tempo</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-chip-val" id="liveErrors">0</div>
+        <div class="stat-chip-label">Erros</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-chip-val" id="liveWords">0</div>
+        <div class="stat-chip-label" title="Número de palavras completadas (1 palavra = 5 caracteres)">Palavras ⓘ</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Text Display -->
+    <div class="text-display-container" onclick="focusInput()">
+      <div class="click-to-start" id="clickToStart">
+        <span>▶ Clique aqui ou pressione qualquer tecla para começar</span>
+      </div>
+      <div class="text-display" id="textDisplay"></div>
+      <input type="text" id="typingInput" class="typing-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+    </div>
+
+    <!-- Result Panel -->
+    <div class="result-panel hidden" id="resultPanel">
+      <div class="result-header">
+        <h3>🏁 Sessão Concluída!</h3>
+        <div class="result-feedback" id="resultFeedback"></div>
+      </div>
+      <div class="result-grid">
+        <div class="result-item"><div class="result-val" id="resWpm">—</div><div class="result-label">WPM</div></div>
+        <div class="result-item"><div class="result-val" id="resAcc">—</div><div class="result-label">Precisão</div></div>
+        <div class="result-item"><div class="result-val" id="resErrors">—</div><div class="result-label">Erros</div></div>
+        <div class="result-item"><div class="result-val" id="resWords">—</div><div class="result-label">Palavras</div></div>
+      </div>
+      <div class="result-actions">
+        <button class="btn-primary" onclick="resetSession()">↺ Tentar novamente</button>
+        <button class="btn-secondary" onclick="generateCertificate()">📜 Gerar Certificado</button>
+        <button class="btn-secondary" onclick="navigateTo('stats')">📊 Ver Estatísticas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Virtual Keyboard -->
+  <div class="vkb-wrapper" id="vkbWrapper">
+    <div class="vkb-header" id="vkbHeader">
+      <span class="vkb-title">⌨️ Teclado Virtual</span>
+      <div class="vkb-btns">
+        <button class="vkb-btn" onclick="toggleVkbSize()" title="Redimensionar">⊞</button>
+        <button class="vkb-btn" onclick="toggleVkb()" title="Minimizar">−</button>
+      </div>
+    </div>
+    <div class="vkb-keys" id="vkbKeys"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: RANKING ===== -->
+<div class="screen" id="screen-ranking">
+  <div class="ranking-wrapper">
+    <div class="ranking-header">
+      <h2>🏆 Ranking da Turma</h2>
+      <p>Competição saudável entre os alunos</p>
+    </div>
+    <div class="ranking-filters">
+      <button class="rank-filter-btn active" onclick="loadRanking('wpm',this)">🚀 Velocidade</button>
+      <button class="rank-filter-btn" onclick="loadRanking('accuracy',this)">🎯 Precisão</button>
+      <button class="rank-filter-btn" onclick="loadRanking('sessions',this)">📅 Sessões</button>
+    </div>
+    <div class="ranking-list" id="rankingList">
+      <div class="ranking-loading">Carregando ranking...</div>
+    </div>
+    <div class="ranking-my-pos" id="rankingMyPos"></div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: STATS ===== -->
+<div class="screen" id="screen-stats">
+  <div class="stats-wrapper">
+    <div class="stats-summary-grid">
+      <div class="stat-card"><div class="stat-card-val" id="statBestWpm">—</div><div class="stat-card-label">Melhor WPM</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="statAvgWpm">—</div><div class="stat-card-label">WPM Médio</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="statAvgAcc">—</div><div class="stat-card-label">Precisão Média</div></div>
+      <div class="stat-card"><div class="stat-card-val" id="statSessions">0</div><div class="stat-card-label">Sessões</div></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Evolução WPM (últimas 20 sessões)</div>
+      <div class="chart-wrap">
+        <canvas id="wpmChart"></canvas>
+        <div class="chart-empty" id="chartEmpty">🎯 Complete mais sessões para ver seu progresso aqui!</div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Distribuição de Precisão</div>
+      <div class="acc-bars" id="accBars"></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Histórico de Sessões</div>
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead><tr><th>#</th><th>Data</th><th>Nível</th><th>WPM</th><th>Precisão</th><th>Erros</th></tr></thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+        <div class="history-empty" id="historyEmpty">Nenhuma sessão ainda.</div>
+      </div>
+    </div>
+
+    <div class="stats-actions">
+      <button class="btn-secondary" onclick="generateCertificate()">📜 Gerar Certificado</button>
+      <button class="btn-danger" onclick="clearStats()">🗑️ Apagar histórico</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: ADMIN ===== -->
+<div class="screen" id="screen-admin">
+  <div class="admin-wrapper">
+    <div class="admin-header">
+      <h2>👨‍🏫 Painel do Professor</h2>
+      <p>Progresso de todos os alunos cadastrados</p>
+      <button class="btn-secondary" onclick="loadAdminData()" style="margin-top:12px">🔄 Atualizar</button>
+    </div>
+    <div class="admin-summary" id="adminSummary">
+      <div class="admin-stat"><div id="adminTotalAlunos">—</div><span>Alunos</span></div>
+      <div class="admin-stat"><div id="adminMediaWpm">—</div><span>WPM Médio</span></div>
+      <div class="admin-stat"><div id="adminTotalSessoes">—</div><span>Sessões totais</span></div>
+    </div>
+    <div class="admin-table-wrap">
+      <table class="admin-table" id="adminTable">
+        <thead><tr><th>#</th><th>Aluno</th><th>E-mail</th><th>Melhor WPM</th><th>Sessões</th><th>Última atividade</th></tr></thead>
+        <tbody id="adminBody"></tbody>
+      </table>
+      <div class="admin-empty" id="adminEmpty" style="display:none">Nenhum aluno cadastrado ainda.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN: ABOUT ===== -->
+<div class="screen" id="screen-about">
+  <div class="about-wrapper">
+    <div class="about-hero">
+      <img src="assets/logo.png" alt="Evolua+" class="about-logo" onerror="this.style.display='none'" />
+      <h2>Sobre o DigiMaster</h2>
+      <p>Ferramenta educacional da <strong>Evolua+ Profissões</strong> para desenvolvimento profissional de digitação.</p>
+    </div>
+    <div class="about-features">
+      <div class="feature-item"><span>🎯</span><div><h4>Exercícios Progressivos</h4><p>Do básico ao avançado, cada nível garantindo evolução contínua.</p></div></div>
+      <div class="feature-item"><span>📊</span><div><h4>Métricas em Tempo Real</h4><p>WPM, precisão, erros e progresso monitorados a cada tecla.</p></div></div>
+      <div class="feature-item"><span>⌨️</span><div><h4>Teclado Visual Interativo</h4><p>Indica a próxima tecla em tempo real.</p></div></div>
+      <div class="feature-item"><span>☁️</span><div><h4>Progresso na Nuvem</h4><p>Seus dados sincronizados em qualquer dispositivo via Google.</p></div></div>
+      <div class="feature-item"><span>🏆</span><div><h4>Ranking e Competição</h4><p>Veja sua posição entre os colegas e motive-se a melhorar.</p></div></div>
+      <div class="feature-item"><span>📜</span><div><h4>Certificado de Conclusão</h4><p>Gere seu certificado em PDF ao completar os níveis.</p></div></div>
+    </div>
+    <div class="about-tips-section">
+      <h3>Dicas para digitar melhor</h3>
+      <ul class="tips-list">
+        <li>Mantenha os dedos indicadores nas teclas <kbd>F</kbd> e <kbd>J</kbd> (posição home).</li>
+        <li>Não olhe para o teclado — use o teclado virtual como guia visual.</li>
+        <li>Prefira precisão à velocidade no início.</li>
+        <li>Pratique pelo menos 15 minutos por dia.</li>
+        <li>Use todos os dedos — evite digitar só com dois.</li>
+      </ul>
+      <div style="margin-top:24px;text-align:center">
+        <button class="btn-secondary" onclick="showHandsModal()">🖐️ Ver posição dos dedos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: POSIÇÃO DAS MÃOS (pós-login) ===== -->
+<div class="hands-overlay" id="handsOverlay">
+  <div class="hands-modal">
+    <div class="hands-header">
+      <img src="assets/logo.png" alt="Evolua+" class="welcome-logo" onerror="this.style.display='none'" />
+      <h2>🖐️ Posição Correta dos Dedos</h2>
+      <p>Aprenda antes de digitar — essa é a base de tudo!</p>
+    </div>
+
+    <!-- Foto real da posição das mãos -->
+    <div class="hand-photo-container">
+      <img src="assets/hand-position.png" alt="Posição correta das mãos no teclado — Guia de digitação profissional" />
+    </div>
+
+    <div class="hands-tips">
+      <div class="htip">💡 <strong>F e J</strong> têm relevo para encontrar a posição sem olhar</div>
+      <div class="htip">💡 Mantenha os <strong>pulsos retos</strong> e cotovelos em 90°</div>
+      <div class="htip">💡 Retorne sempre à posição home após pressionar qualquer tecla</div>
+    </div>
+
+    <div class="hands-footer">
+      <label class="checkbox-label">
+        <input type="checkbox" id="handsDontShow" onchange="saveDontShowHands(this.checked)" />
+        Não mostrar este lembrete novamente
+      </label>
+      <button class="btn-primary" onclick="closeHandsModal()">Entendido, vamos digitar! ⌨️</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: WELCOME ===== -->
+<div class="welcome-overlay" id="welcomeOverlay">
+  <div class="welcome-modal">
+    <div class="welcome-header">
+      <img src="assets/logo.png" alt="Evolua+" class="welcome-logo" onerror="this.style.display='none'" />
+      <h2>Bem-vindo ao <span class="accent">DigiMaster</span>!</h2>
+      <p>Plataforma de treinamento profissional de digitação da Evolua+ Profissões.</p>
+    </div>
+    <div class="welcome-features">
+      <div class="wf-item">⌨️ Teclado virtual interativo</div>
+      <div class="wf-item">📊 Estatísticas em tempo real</div>
+      <div class="wf-item">☁️ Progresso salvo na nuvem</div>
+      <div class="wf-item">🏆 Ranking entre alunos</div>
+      <div class="wf-item">📜 Certificado de conclusão</div>
+      <div class="wf-item">🔊 Sons e feedback sonoro</div>
+    </div>
+    <div class="welcome-footer">
+      <label class="checkbox-label">
+        <input type="checkbox" id="welcomeDontShow" onchange="saveDontShow(this.checked)" />
+        Não mostrar novamente
+      </label>
+      <button class="btn-primary" onclick="closeWelcome()">Começar agora! 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-modal-overlay" id="authModal" onclick="if(event.target===this)closeAuthModal()">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-logo">
+      <img src="assets/logo.png" alt="Evolua+" onerror="this.style.display='none'" />
+      <h2>DigiMaster</h2>
+      <p>Entre para salvar seu progresso na nuvem</p>
+    </div>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.706c-.18-.54-.282-1.117-.282-1.706s.102-1.166.282-1.706V4.962H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.038l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z"/></svg>
+      Entrar com Google
+    </button>
+    <div class="auth-divider"><span>ou</span></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthMode('login')">Entrar</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthMode('cadastro')">Cadastrar</button>
+    </div>
+    <div id="loginPanel" style="display:flex;flex-direction:column;gap:12px">
+      <input class="auth-input" type="email" id="authEmail" placeholder="Seu e-mail" />
+      <input class="auth-input" type="password" id="authPass" placeholder="Sua senha" />
+      <div id="authError" class="auth-error" style="display:none"></div>
+      <button class="auth-submit-btn" onclick="signInWithEmail()">Entrar</button>
+    </div>
+    <div id="signupPanel" style="display:none;flex-direction:column;gap:12px">
+      <input class="auth-input" type="text" id="authName" placeholder="Seu nome completo" />
+      <input class="auth-input" type="email" id="authEmailSignup" placeholder="Seu e-mail" oninput="document.getElementById('authEmail').value=this.value" />
+      <input class="auth-input" type="password" id="authPassSignup" placeholder="Crie uma senha (mín. 6 caracteres)" oninput="document.getElementById('authPass').value=this.value" />
+      <button class="auth-submit-btn" onclick="signUpWithEmail()">Criar conta</button>
+    </div>
+    <p class="auth-note">🔒 Dados salvos com segurança no Firebase</p>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SCRIPTS -->
+<script src="js/data.js"></script>
+<script src="js/lessons.js"></script>
+<script src="js/keyboard.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/sounds.js"></script>
+<script src="js/certificate.js"></script>
+<script src="js/ranking.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/firebase.js"></script>
+</body>
+</html>
