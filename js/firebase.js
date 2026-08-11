@@ -1,7 +1,7 @@
 // =========================================
-// DigiMaster — Firebase Auth + Firestore v4.0
+// DigiMaster - Firebase Auth + Firestore v4.1
 // Evolua+ Profissões
-// Progresso por nível + datas de conclusão
+// Progresso por nível + limpeza segura no logoff
 // =========================================
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -34,120 +34,143 @@ import {
 
 
 // =========================================
-// CONFIGURAÇÃO FIREBASE
+// FIREBASE
 // =========================================
 
 const firebaseConfig = {
-
-  apiKey:
-    'AIzaSyB7WFaELI6h349TnHRbGXLDpQsUPrXUtio',
-
-  authDomain:
-    'digimaster-evolua-a57f0.firebaseapp.com',
-
-  projectId:
-    'digimaster-evolua-a57f0',
-
-  storageBucket:
-    'digimaster-evolua-a57f0.firebasestorage.app',
-
-  messagingSenderId:
-    '536548803200',
-
-  appId:
-    '1:536548803200:web:6c1e09bb82f74ceb641c65'
-
+  apiKey: 'AIzaSyB7WFaELI6h349TnHRbGXLDpQsUPrXUtio',
+  authDomain: 'digimaster-evolua-a57f0.firebaseapp.com',
+  projectId: 'digimaster-evolua-a57f0',
+  storageBucket: 'digimaster-evolua-a57f0.firebasestorage.app',
+  messagingSenderId: '536548803200',
+  appId: '1:536548803200:web:6c1e09bb82f74ceb641c65'
 };
 
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
-const app =
-  initializeApp(
-    firebaseConfig
+window._firestoreDb = db;
+
+window._firestoreLib = {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  limit,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  addDoc,
+  serverTimestamp
+};
+
+window.currentUser = null;
+window.isDigimasterAdmin = false;
+
+
+// =========================================
+// CONFIGURAÇÕES
+// =========================================
+
+const ADMIN_EMAILS = [
+  'evoluamaisprofissoes@gmail.com'
+];
+
+const MIN_ACCURACY = Number(
+  window.DIGIMASTER_MIN_ACCURACY || 80
+);
+
+
+// =========================================
+// LIMPEZA SEGURA DO PAINEL ADMIN
+// =========================================
+
+function resetAdminState(clearData = true) {
+
+  if (
+    typeof window.resetAdminPanelState ===
+    'function'
+  ) {
+
+    window.resetAdminPanelState({
+      clearData
+    });
+
+    return;
+  }
+
+
+  // Fallback caso ranking.js
+  // ainda não tenha inicializado.
+
+  const modal =
+    document.getElementById(
+      'adminDetailModal'
+    );
+
+
+  const content =
+    document.getElementById(
+      'adminDetailContent'
+    );
+
+
+  if (modal) {
+
+    modal.style.display =
+      'none';
+
+
+    modal.setAttribute(
+      'aria-hidden',
+      'true'
+    );
+
+  }
+
+
+  if (content) {
+
+    content.innerHTML =
+      '';
+
+  }
+
+
+  document.body
+    .classList
+    .remove(
+      'dm-modal-open'
+    );
+
+}
+
+
+// =========================================
+// LIMPAR CACHE LOCAL DO USUÁRIO
+// Evita que outro login veja dados da conta
+// anterior antes da sincronização.
+// =========================================
+
+function clearUserLocalCache() {
+
+  localStorage.removeItem(
+    'digimaster_sessions'
   );
 
 
-const auth =
-  getAuth(app);
+  localStorage.removeItem(
+    'digimaster_lessons'
+  );
 
-
-const db =
-  getFirestore(app);
-
-
-const provider =
-  new GoogleAuthProvider();
-
-
-// =========================================
-// COMPARTILHAR FIRESTORE COM OUTROS SCRIPTS
-// =========================================
-
-window._firestoreDb =
-  db;
-
-
-window._firestoreLib = {
-
-  collection,
-
-  getDocs,
-
-  orderBy,
-
-  query,
-
-  limit,
-
-  doc,
-
-  getDoc,
-
-  setDoc,
-
-  updateDoc,
-
-  addDoc,
-
-  serverTimestamp
-
-};
-
-
-window.currentUser =
-  null;
-
-
-window.isDigimasterAdmin =
-  false;
+}
 
 
 // =========================================
 // ADMIN
-// =========================================
-
-const ADMIN_EMAILS = [
-
-  'evoluamaisprofissoes@gmail.com'
-
-];
-
-
-const MIN_ACCURACY =
-
-  Number(
-
-    window
-      .DIGIMASTER_MIN_ACCURACY
-
-    ||
-
-    80
-
-  );
-
-
-// =========================================
-// VERIFICAR ADMIN
 // =========================================
 
 async function checkAdminAccess(
@@ -233,6 +256,15 @@ onAuthStateChanged(
   async user => {
 
 
+    // Sempre encerra qualquer ficha
+    // administrativa pendurada
+    // da sessão anterior.
+
+    resetAdminState(
+      true
+    );
+
+
     window.currentUser =
       user;
 
@@ -245,6 +277,9 @@ onAuthStateChanged(
 
       window.isDigimasterAdmin =
         false;
+
+
+      clearUserLocalCache();
 
 
       renderLoggedOutUI();
@@ -277,6 +312,13 @@ onAuthStateChanged(
     // =====================================
 
     try {
+
+
+      // Remove qualquer cache
+      // da conta anterior.
+
+      clearUserLocalCache();
+
 
       await ensureUserDoc(
         user
@@ -315,13 +357,9 @@ onAuthStateChanged(
 
           window.isDigimasterAdmin
 
-            ?
+            ? 'block'
 
-            'block'
-
-            :
-
-            'none';
+            : 'none';
 
       }
 
@@ -362,8 +400,11 @@ onAuthStateChanged(
     catch (error) {
 
       console.error(
+
         'Erro ao iniciar usuário:',
+
         error
+
       );
 
     }
@@ -374,7 +415,7 @@ onAuthStateChanged(
 
 
 // =========================================
-// CRIAR / ATUALIZAR USUÁRIO
+// CRIAR / ATUALIZAR PERFIL
 // =========================================
 
 async function ensureUserDoc(
@@ -540,54 +581,59 @@ async function ensureUserDoc(
 // =========================================
 
 window.signInWithGoogle =
-  async function () {
+async function () {
 
-    try {
+  try {
 
-      showAuthLoading(
-        true
-      );
-
-
-      await signInWithPopup(
-
-        auth,
-
-        provider
-
-      );
+    resetAdminState(
+      true
+    );
 
 
-      window
-        .closeAuthModal
-        ?.();
-
-    }
-
-    catch (error) {
-
-      console.error(
-        error
-      );
+    showAuthLoading(
+      true
+    );
 
 
-      showAuthError(
+    await signInWithPopup(
 
-        'Erro ao entrar com Google. Tente novamente.'
+      auth,
 
-      );
+      provider
 
-    }
+    );
 
-    finally {
 
-      showAuthLoading(
-        false
-      );
+    window
+      .closeAuthModal
+      ?.();
 
-    }
+  }
 
-  };
+  catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    showAuthError(
+
+      'Erro ao entrar com Google. Tente novamente.'
+
+    );
+
+  }
+
+  finally {
+
+    showAuthLoading(
+      false
+    );
+
+  }
+
+};
 
 
 // =========================================
@@ -595,49 +641,222 @@ window.signInWithGoogle =
 // =========================================
 
 window.signInWithEmail =
-  async function () {
+async function () {
 
-    const email =
+  const email =
 
-      document
-        .getElementById(
-          'authEmail'
-        )
-        ?.value
-        ?.trim();
-
-
-    const password =
-
-      document
-        .getElementById(
-          'authPass'
-        )
-        ?.value;
+    document
+      .getElementById(
+        'authEmail'
+      )
+      ?.value
+      ?.trim();
 
 
-    if (
-      !email ||
-      !password
-    ) {
+  const password =
 
-      return showAuthError(
-
-        'Preencha e-mail e senha.'
-
-      );
-
-    }
+    document
+      .getElementById(
+        'authPass'
+      )
+      ?.value;
 
 
-    try {
+  if (
+    !email ||
+    !password
+  ) {
 
-      showAuthLoading(
-        true
-      );
+    showAuthError(
+
+      'Preencha e-mail e senha.'
+
+    );
 
 
-      await signInWithEmailAndPassword(
+    return;
+
+  }
+
+
+  try {
+
+    resetAdminState(
+      true
+    );
+
+
+    showAuthLoading(
+      true
+    );
+
+
+    await signInWithEmailAndPassword(
+
+      auth,
+
+      email,
+
+      password
+
+    );
+
+
+    window
+      .closeAuthModal
+      ?.();
+
+  }
+
+  catch (error) {
+
+    console.error(
+      error
+    );
+
+
+    showAuthError(
+
+      (
+        error.code ===
+          'auth/user-not-found'
+
+        ||
+
+        error.code ===
+          'auth/invalid-credential'
+      )
+
+        ?
+
+        'E-mail ou senha incorretos.'
+
+        :
+
+        'Erro ao entrar. Verifique seus dados.'
+
+    );
+
+  }
+
+  finally {
+
+    showAuthLoading(
+      false
+    );
+
+  }
+
+};
+
+
+// =========================================
+// CADASTRO
+// =========================================
+
+window.signUpWithEmail =
+async function () {
+
+  const name =
+
+    document
+      .getElementById(
+        'authName'
+      )
+      ?.value
+      ?.trim();
+
+
+  const email =
+
+    document
+      .getElementById(
+        'authEmailSignup'
+      )
+      ?.value
+      ?.trim()
+
+    ||
+
+    document
+      .getElementById(
+        'authEmail'
+      )
+      ?.value
+      ?.trim();
+
+
+  const password =
+
+    document
+      .getElementById(
+        'authPassSignup'
+      )
+      ?.value
+
+    ||
+
+    document
+      .getElementById(
+        'authPass'
+      )
+      ?.value;
+
+
+  if (
+
+    !name ||
+
+    !email ||
+
+    !password
+
+  ) {
+
+    showAuthError(
+
+      'Preencha todos os campos.'
+
+    );
+
+
+    return;
+
+  }
+
+
+  if (
+    password.length <
+    6
+  ) {
+
+    showAuthError(
+
+      'A senha precisa ter pelo menos 6 caracteres.'
+
+    );
+
+
+    return;
+
+  }
+
+
+  try {
+
+    resetAdminState(
+      true
+    );
+
+
+    showAuthLoading(
+      true
+    );
+
+
+    const credential =
+
+      await createUserWithEmailAndPassword(
 
         auth,
 
@@ -648,267 +867,115 @@ window.signInWithEmail =
       );
 
 
-      window
-        .closeAuthModal
-        ?.();
+    await updateProfile(
 
-    }
+      credential.user,
 
-    catch (error) {
+      {
+        displayName:
+          name
+      }
 
-      console.error(
-        error
-      );
+    );
 
 
-      showAuthError(
+    await setDoc(
 
-        error.code ===
-          'auth/user-not-found'
+      doc(
 
-        ||
+        db,
 
-        error.code ===
-          'auth/invalid-credential'
+        'users',
 
-          ?
+        credential.user.uid
 
-          'E-mail ou senha incorretos.'
+      ),
 
-          :
+      {
 
-          'Erro ao entrar. Verifique seus dados.'
+        name,
 
-      );
+        email,
 
-    }
+        photoURL:
 
-    finally {
+          credential.user
+            .photoURL
 
-      showAuthLoading(
-        false
-      );
+          ||
 
-    }
+          null,
 
-  };
+        createdAt:
+          serverTimestamp(),
 
+        totalSessions:
+          0,
 
-// =========================================
-// CADASTRO
-// =========================================
+        bestWpm:
+          0,
 
-window.signUpWithEmail =
-  async function () {
+        bestAccuracy:
+          0,
 
-    const name =
+        completedLessons:
+          0,
 
-      document
-        .getElementById(
-          'authName'
-        )
-        ?.value
-        ?.trim();
+        levelProgress:
+          {},
 
+        levelCompletions:
+          {}
 
-    const email =
+      },
 
-      document
-        .getElementById(
-          'authEmailSignup'
-        )
-        ?.value
-        ?.trim()
+      {
+        merge:
+          true
+      }
 
-      ||
+    );
 
-      document
-        .getElementById(
-          'authEmail'
-        )
-        ?.value
-        ?.trim();
 
+    window
+      .closeAuthModal
+      ?.();
 
-    const password =
+  }
 
-      document
-        .getElementById(
-          'authPassSignup'
-        )
-        ?.value
+  catch (error) {
 
-      ||
+    console.error(
+      error
+    );
 
-      document
-        .getElementById(
-          'authPass'
-        )
-        ?.value;
 
+    showAuthError(
 
-    if (
+      error.code ===
+        'auth/email-already-in-use'
 
-      !name ||
+        ?
 
-      !email ||
+        'E-mail já cadastrado. Faça login.'
 
-      !password
+        :
 
-    ) {
+        'Erro ao criar conta. Tente novamente.'
 
-      return showAuthError(
+    );
 
-        'Preencha todos os campos.'
+  }
 
-      );
+  finally {
 
-    }
+    showAuthLoading(
+      false
+    );
 
+  }
 
-    if (
-      password.length <
-      6
-    ) {
-
-      return showAuthError(
-
-        'A senha precisa ter pelo menos 6 caracteres.'
-
-      );
-
-    }
-
-
-    try {
-
-      showAuthLoading(
-        true
-      );
-
-
-      const credential =
-
-        await createUserWithEmailAndPassword(
-
-          auth,
-
-          email,
-
-          password
-
-        );
-
-
-      await updateProfile(
-
-        credential.user,
-
-        {
-          displayName:
-            name
-        }
-
-      );
-
-
-      await setDoc(
-
-        doc(
-
-          db,
-
-          'users',
-
-          credential.user.uid
-
-        ),
-
-        {
-
-          name,
-
-          email,
-
-          photoURL:
-
-            credential.user
-              .photoURL
-
-            ||
-
-            null,
-
-          createdAt:
-            serverTimestamp(),
-
-          totalSessions:
-            0,
-
-          bestWpm:
-            0,
-
-          bestAccuracy:
-            0,
-
-          completedLessons:
-            0,
-
-          levelProgress:
-            {},
-
-          levelCompletions:
-            {}
-
-        },
-
-        {
-          merge:
-            true
-        }
-
-      );
-
-
-      window
-        .closeAuthModal
-        ?.();
-
-    }
-
-    catch (error) {
-
-      console.error(
-        error
-      );
-
-
-      showAuthError(
-
-        error.code ===
-          'auth/email-already-in-use'
-
-          ?
-
-          'E-mail já cadastrado. Faça login.'
-
-          :
-
-          'Erro ao criar conta. Tente novamente.'
-
-      );
-
-    }
-
-    finally {
-
-      showAuthLoading(
-        false
-      );
-
-    }
-
-  };
+};
 
 
 // =========================================
@@ -916,67 +983,85 @@ window.signUpWithEmail =
 // =========================================
 
 window.doSignOut =
-  async function () {
+async function () {
 
-    try {
+  try {
 
-      await signOut(
-        auth
+
+    // Fecha a ficha imediatamente,
+    // antes mesmo de esperar o Firebase.
+
+    resetAdminState(
+      true
+    );
+
+
+    // Remove dados locais associados
+    // ao usuário atual.
+
+    clearUserLocalCache();
+
+
+    await signOut(
+      auth
+    );
+
+
+    window.currentUser =
+      null;
+
+
+    window.isDigimasterAdmin =
+      false;
+
+
+    const adminBtn =
+      document.getElementById(
+        'adminNavBtn'
       );
 
 
-      window.currentUser =
-        null;
+    if (adminBtn) {
 
-
-      window.isDigimasterAdmin =
-        false;
-
-
-      document
-        .getElementById(
-          'adminNavBtn'
-        )
-        ?.style
-        .setProperty(
-          'display',
-          'none'
-        );
-
-
-      if (
-        typeof window.navigateTo ===
-        'function'
-      ) {
-
-        window.navigateTo(
-          'home'
-        );
-
-      }
-
-
-      window
-        .showToast
-        ?.(
-          '👋 Até logo!'
-        );
+      adminBtn.style.display =
+        'none';
 
     }
 
-    catch (error) {
 
-      console.error(
+    if (
+      typeof window.navigateTo ===
+      'function'
+    ) {
 
-        'Erro no logoff:',
-
-        error
-
+      window.navigateTo(
+        'home'
       );
 
     }
 
-  };
+
+    window
+      .showToast
+      ?.(
+        '👋 Até logo!'
+      );
+
+  }
+
+  catch (error) {
+
+    console.error(
+
+      'Erro no logoff:',
+
+      error
+
+    );
+
+  }
+
+};
 
 
 // =========================================
@@ -984,189 +1069,194 @@ window.doSignOut =
 // =========================================
 
 window.saveSessionCloud =
-  async function (
-    data
+async function (
+  data
+) {
+
+  if (
+    !window.currentUser
   ) {
 
-    if (
-      !window.currentUser
-    ) {
+    return;
 
-      return;
-
-    }
+  }
 
 
-    const uid =
-      window.currentUser.uid;
+  const uid =
+    window.currentUser.uid;
 
 
-    const mode =
+  const mode =
+
+    document
+      .getElementById(
+        'modeSelect'
+      )
+      ?.value
+
+    ||
+
+    'words';
+
+
+  const duration =
+
+    Number(
 
       document
         .getElementById(
-          'modeSelect'
+          'durationSelect'
         )
         ?.value
 
       ||
 
-      'words';
+      60
+
+    );
 
 
-    const duration =
+  try {
 
-      Number(
+    await addDoc(
 
-        document
-          .getElementById(
-            'durationSelect'
+      collection(
+
+        db,
+
+        'users',
+
+        uid,
+
+        'sessions'
+
+      ),
+
+      {
+
+        ...data,
+
+        mode,
+
+        duration,
+
+        timestamp:
+          serverTimestamp()
+
+      }
+
+    );
+
+
+    const userRef =
+
+      doc(
+
+        db,
+
+        'users',
+
+        uid
+
+      );
+
+
+    const snap =
+      await getDoc(
+        userRef
+      );
+
+
+    const userData =
+      snap.data() ||
+      {};
+
+
+    await updateDoc(
+
+      userRef,
+
+      {
+
+        totalSessions:
+
+          Number(
+            userData
+              .totalSessions ||
+            0
           )
-          ?.value
 
-        ||
+          +
 
-        60
-
-      );
+          1,
 
 
-    try {
+        bestWpm:
 
-      await addDoc(
-
-        collection(
-
-          db,
-
-          'users',
-
-          uid,
-
-          'sessions'
-
-        ),
-
-        {
-
-          ...data,
-
-          mode,
-
-          duration,
-
-          timestamp:
-            serverTimestamp()
-
-        }
-
-      );
-
-
-      const userRef =
-
-        doc(
-
-          db,
-
-          'users',
-
-          uid
-
-        );
-
-
-      const snap =
-        await getDoc(
-          userRef
-        );
-
-
-      const userData =
-        snap.data() ||
-        {};
-
-
-      await updateDoc(
-
-        userRef,
-
-        {
-
-          totalSessions:
+          Math.max(
 
             Number(
               userData
-                .totalSessions ||
+                .bestWpm ||
+              0
+            ),
+
+            Number(
+              data.wpm ||
               0
             )
 
-            +
+          ),
 
-            1,
 
-          bestWpm:
+        bestAccuracy:
 
-            Math.max(
+          Math.max(
 
-              Number(
-                userData
-                  .bestWpm ||
-                0
-              ),
-
-              Number(
-                data.wpm ||
-                0
-              )
-
+            Number(
+              userData
+                .bestAccuracy ||
+              0
             ),
 
-          bestAccuracy:
+            Number(
+              data.accuracy ||
+              0
+            )
 
-            Math.max(
+          ),
 
-              Number(
-                userData
-                  .bestAccuracy ||
-                0
-              ),
 
-              Number(
-                data.accuracy ||
-                0
-              )
+        lastSession:
+          serverTimestamp(),
 
-            ),
 
-          lastSession:
-            serverTimestamp(),
+        lastMode:
+          mode,
 
-          lastMode:
-            mode,
 
-          lastDuration:
-            duration
+        lastDuration:
+          duration
 
-        }
+      }
 
-      );
+    );
 
-    }
+  }
 
-    catch (error) {
+  catch (error) {
 
-      console.warn(
+    console.warn(
 
-        'Falha ao salvar sessão na nuvem:',
+      'Falha ao salvar sessão na nuvem:',
 
-        error
+      error
 
-      );
+    );
 
-    }
+  }
 
-  };
+};
 
 
 // =========================================
@@ -1215,7 +1305,7 @@ function lessonLevelFromId(
 
 
 // =========================================
-// CONVERTER TIMESTAMP
+// CONVERTER DATA / TIMESTAMP
 // =========================================
 
 function timestampMillis(
@@ -1273,7 +1363,7 @@ function timestampMillis(
 
 
 // =========================================
-// ATUALIZAR RESUMO DOS NÍVEIS
+// ATUALIZAR PROGRESSO DOS NÍVEIS
 // =========================================
 
 async function refreshLevelSummary(
@@ -1345,10 +1435,6 @@ async function refreshLevelSummary(
     [];
 
 
-  // =====================================
-  // CARREGAR LIÇÕES DO ALUNO
-  // =====================================
-
   const lessonsSnap =
 
     await getDocs(
@@ -1374,7 +1460,7 @@ async function refreshLevelSummary(
 
   lessonsSnap.forEach(
 
-    item =>
+    item => {
 
       lessonRecords.push({
 
@@ -1383,14 +1469,12 @@ async function refreshLevelSummary(
 
         ...item.data()
 
-      })
+      });
+
+    }
 
   );
 
-
-  // =====================================
-  // CALCULAR CADA NÍVEL
-  // =====================================
 
   for (
 
@@ -1406,6 +1490,7 @@ async function refreshLevelSummary(
     )
 
   ) {
+
 
     const ids =
 
@@ -1425,7 +1510,9 @@ async function refreshLevelSummary(
 
           ids.has(
 
-            item.lessonId ||
+            item.lessonId
+
+            ||
 
             item.id
 
@@ -1449,9 +1536,13 @@ async function refreshLevelSummary(
 
       Number(
 
-        level.total ||
+        level.total
 
-        ids.size ||
+        ||
+
+        ids.size
+
+        ||
 
         0
 
@@ -1464,7 +1555,9 @@ async function refreshLevelSummary(
 
     const isComplete =
 
-      total > 0 &&
+      total > 0
+
+      &&
 
       completed >=
       total;
@@ -1482,13 +1575,8 @@ async function refreshLevelSummary(
 
           Math.round(
 
-            (
-              completed /
-              total
-            )
-
-            *
-
+            completed /
+            total *
             100
 
           )
@@ -1515,19 +1603,20 @@ async function refreshLevelSummary(
     };
 
 
-    // ===================================
     // PRIMEIRA CONCLUSÃO DO NÍVEL
-    // ===================================
 
     if (
 
-      isComplete &&
+      isComplete
+
+      &&
 
       !previousCompletions[
         levelKey
       ]?.completedAt
 
     ) {
+
 
       let latestRecord =
         null;
@@ -1539,8 +1628,7 @@ async function refreshLevelSummary(
 
       for (
         const item
-        of
-        passed
+        of passed
       ) {
 
         const candidate =
@@ -1560,8 +1648,7 @@ async function refreshLevelSummary(
 
 
         if (
-          ms >=
-          latestMs
+          ms >= latestMs
         ) {
 
           latestMs =
@@ -1583,6 +1670,7 @@ async function refreshLevelSummary(
         completed:
           true,
 
+
         completedAt:
 
           latestRecord
@@ -1591,8 +1679,10 @@ async function refreshLevelSummary(
 
           serverTimestamp(),
 
+
         totalLessons:
           total,
+
 
         minAccuracy:
           MIN_ACCURACY
@@ -1608,10 +1698,6 @@ async function refreshLevelSummary(
 
   }
 
-
-  // =====================================
-  // TOTAL DE LIÇÕES APROVADAS
-  // =====================================
 
   const totalCompletedLessons =
 
@@ -1631,10 +1717,6 @@ async function refreshLevelSummary(
     ).length;
 
 
-  // =====================================
-  // ATUALIZAR PERFIL
-  // =====================================
-
   await setDoc(
 
     userRef,
@@ -1644,13 +1726,17 @@ async function refreshLevelSummary(
       completedLessons:
         totalCompletedLessons,
 
+
       lastLesson:
         currentLessonId,
+
 
       lastLessonAt:
         serverTimestamp(),
 
+
       levelProgress,
+
 
       levelCompletions:
         newCompletions
@@ -1664,10 +1750,6 @@ async function refreshLevelSummary(
 
   );
 
-
-  // =====================================
-  // AVISO DE NÍVEL CONCLUÍDO
-  // =====================================
 
   if (
     newlyCompleted.length
@@ -1705,267 +1787,266 @@ async function refreshLevelSummary(
 
 
 // =========================================
-// SALVAR LIÇÃO NO FIREBASE
+// SALVAR LIÇÃO
 // =========================================
 
 window.saveLessonCloud =
-  async function (
-    lessonId,
-    wpm,
-    accuracy
+async function (
+  lessonId,
+  wpm,
+  accuracy
+) {
+
+  if (
+    !window.currentUser
   ) {
 
-    if (
-      !window.currentUser
-    ) {
+    return;
 
-      return;
-
-    }
+  }
 
 
-    // =====================================
-    // MENOS DE 80% NÃO CONCLUI
-    // =====================================
+  if (
 
-    if (
+    Number(
+      accuracy ||
+      0
+    )
 
-      Number(
-        accuracy ||
-        0
-      )
+    <
 
-      <
+    MIN_ACCURACY
 
-      MIN_ACCURACY
+  ) {
 
-    ) {
+    return;
 
-      return;
-
-    }
+  }
 
 
-    const uid =
-      window.currentUser.uid;
+  const uid =
+    window.currentUser.uid;
 
 
-    const level =
+  const level =
 
-      lessonLevelFromId(
+    lessonLevelFromId(
+      lessonId
+    );
+
+
+  try {
+
+    const lessonRef =
+
+      doc(
+
+        db,
+
+        'users',
+
+        uid,
+
+        'lessons',
+
         lessonId
+
       );
 
 
-    try {
+    const snap =
 
-      const lessonRef =
-
-        doc(
-
-          db,
-
-          'users',
-
-          uid,
-
-          'lessons',
-
-          lessonId
-
-        );
+      await getDoc(
+        lessonRef
+      );
 
 
-      const snap =
+    const previous =
 
-        await getDoc(
-          lessonRef
-        );
+      snap.exists()
 
+        ?
 
-      const previous =
+        snap.data()
 
-        snap.exists()
+        :
 
-          ?
-
-          snap.data()
-
-          :
-
-          null;
+        null;
 
 
-      // ===================================
-      // PRIMEIRA VEZ
-      // ===================================
+    // PRIMEIRA CONCLUSÃO
 
-      if (!previous) {
+    if (!previous) {
 
-        await setDoc(
+      await setDoc(
 
-          lessonRef,
+        lessonRef,
 
-          {
+        {
 
-            lessonId,
+          lessonId,
+
+          level,
+
+
+          wpm:
+
+            Number(
+              wpm ||
+              0
+            ),
+
+
+          accuracy:
+
+            Number(
+              accuracy ||
+              0
+            ),
+
+
+          completedAt:
+            serverTimestamp(),
+
+
+          firstCompletedAt:
+            serverTimestamp(),
+
+
+          updatedAt:
+            serverTimestamp()
+
+        }
+
+      );
+
+    }
+
+
+    // REPETIÇÃO
+
+    else {
+
+      await setDoc(
+
+        lessonRef,
+
+        {
+
+          lessonId,
+
+
+          level:
+
+            previous.level
+
+            ||
 
             level,
 
-            wpm:
+
+          wpm:
+
+            Math.max(
+
+              Number(
+                previous.wpm ||
+                0
+              ),
 
               Number(
                 wpm ||
                 0
-              ),
+              )
 
-            accuracy:
+            ),
+
+
+          accuracy:
+
+            Math.max(
+
+              Number(
+                previous.accuracy ||
+                0
+              ),
 
               Number(
                 accuracy ||
                 0
-              ),
+              )
 
-            completedAt:
-              serverTimestamp(),
-
-            firstCompletedAt:
-              serverTimestamp(),
-
-            updatedAt:
-              serverTimestamp()
-
-          }
-
-        );
-
-      }
+            ),
 
 
-      // ===================================
-      // REPETIÇÃO DA LIÇÃO
-      // ===================================
+          completedAt:
 
-      else {
+            previous.completedAt
 
-        await setDoc(
+            ||
 
-          lessonRef,
+            previous.firstCompletedAt
 
-          {
+            ||
 
-            lessonId,
-
-            level:
-
-              previous.level
-
-              ||
-
-              level,
-
-            wpm:
-
-              Math.max(
-
-                Number(
-                  previous.wpm ||
-                  0
-                ),
-
-                Number(
-                  wpm ||
-                  0
-                )
-
-              ),
-
-            accuracy:
-
-              Math.max(
-
-                Number(
-                  previous.accuracy ||
-                  0
-                ),
-
-                Number(
-                  accuracy ||
-                  0
-                )
-
-              ),
-
-            completedAt:
-
-              previous.completedAt
-
-              ||
-
-              previous.firstCompletedAt
-
-              ||
-
-              serverTimestamp(),
-
-            firstCompletedAt:
-
-              previous.firstCompletedAt
-
-              ||
-
-              previous.completedAt
-
-              ||
-
-              serverTimestamp(),
-
-            updatedAt:
-              serverTimestamp()
-
-          },
-
-          {
-            merge:
-              true
-          }
-
-        );
-
-      }
+            serverTimestamp(),
 
 
-      // ===================================
-      // RECALCULAR NÍVEIS
-      // ===================================
+          firstCompletedAt:
 
-      await refreshLevelSummary(
+            previous.firstCompletedAt
 
-        uid,
+            ||
 
-        lessonId
+            previous.completedAt
+
+            ||
+
+            serverTimestamp(),
+
+
+          updatedAt:
+            serverTimestamp()
+
+        },
+
+        {
+          merge:
+            true
+        }
 
       );
 
     }
 
-    catch (error) {
 
-      console.warn(
+    await refreshLevelSummary(
 
-        'Falha ao salvar lição na nuvem:',
+      uid,
 
-        error
+      lessonId
 
-      );
+    );
 
-    }
+  }
 
-  };
+  catch (error) {
+
+    console.warn(
+
+      'Falha ao salvar lição na nuvem:',
+
+      error
+
+    );
+
+  }
+
+};
 
 
 // =========================================
-// SINCRONIZAR DADOS DA NUVEM
+// SINCRONIZAR NUVEM
 // =========================================
 
 async function syncFromCloud(
@@ -1973,6 +2054,7 @@ async function syncFromCloud(
 ) {
 
   try {
+
 
     // =====================================
     // SESSÕES
@@ -2027,23 +2109,30 @@ async function syncFromCloud(
           wpm:
             data.wpm,
 
+
           accuracy:
             data.accuracy,
+
 
           errors:
             data.errors,
 
+
           words:
             data.words,
+
 
           level:
             data.level,
 
+
           mode:
             data.mode,
 
+
           duration:
             data.duration,
+
 
           date:
 
@@ -2131,6 +2220,7 @@ async function syncFromCloud(
 
         ] = {
 
+
           completed:
 
             Number(
@@ -2142,11 +2232,14 @@ async function syncFromCloud(
 
             MIN_ACCURACY,
 
+
           wpm:
             data.wpm,
 
+
           accuracy:
             data.accuracy,
+
 
           date:
 
@@ -2159,6 +2252,7 @@ async function syncFromCloud(
 
             new Date()
               .toISOString(),
+
 
           firstCompletedAt:
 
@@ -2188,10 +2282,6 @@ async function syncFromCloud(
 
     );
 
-
-    // =====================================
-    // ATUALIZAR INTERFACE
-    // =====================================
 
     window
       .renderStats
@@ -2225,7 +2315,7 @@ async function syncFromCloud(
 
 
 // =========================================
-// ESCAPAR HTML
+// PROTEÇÃO HTML
 // =========================================
 
 function escapeHtml(
@@ -2233,8 +2323,7 @@ function escapeHtml(
 ) {
 
   return String(
-    value ??
-    ''
+    value ?? ''
   )
 
     .replaceAll(
@@ -2266,7 +2355,7 @@ function escapeHtml(
 
 
 // =========================================
-// INTERFACE USUÁRIO LOGADO
+// INTERFACE LOGADO
 // =========================================
 
 function renderUserUI(
@@ -2319,17 +2408,13 @@ function renderUserUI(
 
       `
 
-      <img
-
-        src="${escapeHtml(
-          user.photoURL
-        )}"
-
-        class="user-avatar"
-
-        alt="Perfil"
-
-      >
+        <img
+          src="${escapeHtml(
+            user.photoURL
+          )}"
+          class="user-avatar"
+          alt="Perfil"
+        >
 
       `
 
@@ -2337,13 +2422,11 @@ function renderUserUI(
 
       `
 
-      <div
-        class="user-avatar-placeholder"
-      >
-
-        ${initial}
-
-      </div>
+        <div
+          class="user-avatar-placeholder"
+        >
+          ${initial}
+        </div>
 
       `;
 
@@ -2356,7 +2439,9 @@ function renderUserUI(
 
       <span class="user-name">
 
-        ${escapeHtml(name)}
+        ${escapeHtml(
+          name
+        )}
 
       </span>
 
@@ -2365,9 +2450,7 @@ function renderUserUI(
         type="button"
         onclick="doSignOut()"
       >
-
         Sair
-
       </button>
 
     </div>
@@ -2390,23 +2473,24 @@ function renderLoggedOutUI() {
     );
 
 
-  if (area) {
+  if (!area) {
 
-    area.innerHTML = `
-
-      <button
-        class="btn-login"
-        type="button"
-        onclick="openAuthModal('login')"
-      >
-
-        Entrar / Cadastrar
-
-      </button>
-
-    `;
+    return;
 
   }
+
+
+  area.innerHTML = `
+
+    <button
+      class="btn-login"
+      type="button"
+      onclick="openAuthModal('login')"
+    >
+      Entrar / Cadastrar
+    </button>
+
+  `;
 
 }
 
@@ -2495,150 +2579,147 @@ function removeMobileSignout() {
 // =========================================
 
 window.openAuthModal =
-  function (
-    mode = 'login'
-  ) {
+function (
+  mode = 'login'
+) {
 
-    const modal =
-
-      document.getElementById(
-        'authModal'
-      );
+  resetAdminState(
+    false
+  );
 
 
-    if (!modal) {
+  const modal =
 
-      return;
+    document.getElementById(
+      'authModal'
+    );
 
-    }
+
+  if (!modal) {
+
+    return;
+
+  }
 
 
-    modal.classList.add(
+  modal.classList.add(
+    'open'
+  );
+
+
+  window.switchAuthMode(
+    mode
+  );
+
+};
+
+
+window.closeAuthModal =
+function () {
+
+  document
+    .getElementById(
+      'authModal'
+    )
+    ?.classList
+    .remove(
       'open'
     );
 
 
-    window.switchAuthMode(
-      mode
-    );
+  clearAuthError();
 
-  };
-
-
-window.closeAuthModal =
-  function () {
-
-    document
-      .getElementById(
-        'authModal'
-      )
-      ?.classList
-      .remove(
-        'open'
-      );
-
-
-    clearAuthError();
-
-  };
+};
 
 
 window.switchAuthMode =
-  function (
-    mode
-  ) {
+function (
+  mode
+) {
 
-    const loginPanel =
+  const loginPanel =
 
-      document.getElementById(
-        'loginPanel'
-      );
-
-
-    const signupPanel =
-
-      document.getElementById(
-        'signupPanel'
-      );
+    document.getElementById(
+      'loginPanel'
+    );
 
 
-    const tabLogin =
+  const signupPanel =
 
-      document.getElementById(
-        'tabLogin'
-      );
-
-
-    const tabSignup =
-
-      document.getElementById(
-        'tabSignup'
-      );
+    document.getElementById(
+      'signupPanel'
+    );
 
 
-    const login =
+  const tabLogin =
 
-      mode ===
-      'login';
-
-
-    if (loginPanel) {
-
-      loginPanel.style.display =
-
-        login
-
-          ?
-
-          'flex'
-
-          :
-
-          'none';
-
-    }
+    document.getElementById(
+      'tabLogin'
+    );
 
 
-    if (signupPanel) {
+  const tabSignup =
 
-      signupPanel.style.display =
-
-        login
-
-          ?
-
-          'none'
-
-          :
-
-          'flex';
-
-    }
+    document.getElementById(
+      'tabSignup'
+    );
 
 
-    tabLogin
-      ?.classList
-      .toggle(
-        'active',
-        login
-      );
+  const isLogin =
+
+    mode ===
+    'login';
 
 
-    tabSignup
-      ?.classList
-      .toggle(
-        'active',
-        !login
-      );
+  if (loginPanel) {
+
+    loginPanel.style.display =
+
+      isLogin
+
+        ? 'flex'
+
+        : 'none';
+
+  }
 
 
-    clearAuthError();
+  if (signupPanel) {
 
-  };
+    signupPanel.style.display =
+
+      isLogin
+
+        ? 'none'
+
+        : 'flex';
+
+  }
+
+
+  tabLogin
+    ?.classList
+    .toggle(
+      'active',
+      isLogin
+    );
+
+
+  tabSignup
+    ?.classList
+    .toggle(
+      'active',
+      !isLogin
+    );
+
+
+  clearAuthError();
+
+};
 
 
 // =========================================
-// ERRO AUTENTICAÇÃO
+// ERROS LOGIN
 // =========================================
 
 function showAuthError(
@@ -2711,13 +2792,9 @@ function showAuthLoading(
 
           loading
 
-            ?
+            ? '.6'
 
-            '.6'
-
-            :
-
-            '1';
+            : '1';
 
       }
 
@@ -2843,6 +2920,7 @@ function randomFrom(
     Math.floor(
 
       Math.random() *
+
       list.length
 
     )
@@ -2853,7 +2931,7 @@ function randomFrom(
 
 
 // =========================================
-// VISIBILIDADE TEXTO PERSONALIZADO
+// TEXTO PERSONALIZADO
 // =========================================
 
 function updateCustomTextVisibility() {
@@ -2881,13 +2959,9 @@ function updateCustomTextVisibility() {
       mode ===
       'custom'
 
-        ?
+        ? 'block'
 
-        'block'
-
-        :
-
-        'none';
+        : 'none';
 
   }
 
@@ -3001,7 +3075,7 @@ function installPracticeEnhancements() {
 
 
   // =====================================
-  // TEXTO PERSONALIZADO
+  // MODO PERSONALIZADO
   // =====================================
 
   if (
@@ -3088,15 +3162,13 @@ function installPracticeEnhancements() {
 
       </div>
 
+
       <textarea
-
         id="customPracticeText"
-
         maxlength="12000"
-
         placeholder="Cole ou digite aqui o texto para praticar..."
-
       ></textarea>
+
 
       <div class="custom-text-actions">
 
@@ -3105,13 +3177,9 @@ function installPracticeEnhancements() {
         </span>
 
         <button
-
           type="button"
-
           class="btn-secondary"
-
           id="customApplyBtn"
-
         >
           Aplicar texto
         </button>
@@ -3144,7 +3212,9 @@ function installPracticeEnhancements() {
       );
 
 
-    if (textarea) {
+    if (
+      textarea
+    ) {
 
       textarea.value =
 
@@ -3157,7 +3227,9 @@ function installPracticeEnhancements() {
         '';
 
 
-      if (count) {
+      if (
+        count
+      ) {
 
         count.textContent =
 
@@ -3181,7 +3253,9 @@ function installPracticeEnhancements() {
           );
 
 
-          if (count) {
+          if (
+            count
+          ) {
 
             count.textContent =
 
@@ -3214,16 +3288,21 @@ function installPracticeEnhancements() {
 
           ) {
 
-            return window
+            window
               .showToast
               ?.(
                 '⚠️ Digite ou cole um texto primeiro.'
               );
 
+
+            return;
+
           }
 
 
-          if (modeSelect) {
+          if (
+            modeSelect
+          ) {
 
             modeSelect.value =
               'custom';
@@ -3266,7 +3345,7 @@ function installPracticeEnhancements() {
 
 
   // =====================================
-  // MODIFICAR GET RANDOM TEXT
+  // CONTROLAR TEXTOS
   // =====================================
 
   const originalGetRandomText =
@@ -3281,11 +3360,13 @@ function installPracticeEnhancements() {
 
     &&
 
-    !window.__digimasterTextModeInstalled
+    !window
+      .__digimasterTextModeInstalled
 
   ) {
 
-    window.__digimasterTextModeInstalled =
+    window
+      .__digimasterTextModeInstalled =
       true;
 
 
@@ -3314,18 +3395,12 @@ function installPracticeEnhancements() {
             level
           ]
 
-            ?
+            ? level
 
-            level
-
-            :
-
-            'intermediario';
+            : 'intermediario';
 
 
-        // =================================
         // PERSONALIZADO
-        // =================================
 
         if (
           mode ===
@@ -3371,9 +3446,7 @@ function installPracticeEnhancements() {
         }
 
 
-        // =================================
         // TEXTO
-        // =================================
 
         if (
           mode ===
@@ -3391,33 +3464,32 @@ function installPracticeEnhancements() {
         }
 
 
-        // =================================
         // TEMPO LIVRE
-        // =================================
 
         if (
           mode ===
           'time'
         ) {
 
+          const pool =
+
+            EXTRA_TEXTS[
+              safeLevel
+            ];
+
+
           return [
 
             randomFrom(
-              EXTRA_TEXTS[
-                safeLevel
-              ]
+              pool
             ),
 
             randomFrom(
-              EXTRA_TEXTS[
-                safeLevel
-              ]
+              pool
             ),
 
             randomFrom(
-              EXTRA_TEXTS[
-                safeLevel
-              ]
+              pool
             )
 
           ].join(
@@ -3427,9 +3499,7 @@ function installPracticeEnhancements() {
         }
 
 
-        // =================================
         // PALAVRAS
-        // =================================
 
         if (
 
@@ -3445,7 +3515,7 @@ function installPracticeEnhancements() {
           &&
 
           Math.random() <
-          .7
+          0.7
 
         ) {
 
@@ -3503,9 +3573,9 @@ function injectStyles() {
 
   style.textContent = `
 
-    .dm-mobile-signout {
+    .dm-mobile-signout{
 
-      display: none;
+      display:none;
 
       background:
         rgba(255,45,120,.08);
@@ -3538,10 +3608,9 @@ function injectStyles() {
     }
 
 
-    .custom-text-panel {
+    .custom-text-panel{
 
-      display:
-        none;
+      display:none;
 
       background:
         var(--bg2);
@@ -3563,13 +3632,11 @@ function injectStyles() {
 
 
     .custom-text-head,
-    .custom-text-actions {
+    .custom-text-actions{
 
-      display:
-        flex;
+      display:flex;
 
-      align-items:
-        center;
+      align-items:center;
 
       justify-content:
         space-between;
@@ -3583,10 +3650,9 @@ function injectStyles() {
     }
 
 
-    .custom-text-head > div {
+    .custom-text-head > div{
 
-      display:
-        flex;
+      display:flex;
 
       flex-direction:
         column;
@@ -3597,7 +3663,7 @@ function injectStyles() {
     }
 
 
-    .custom-text-head strong {
+    .custom-text-head strong{
 
       font-family:
         var(--font-ui);
@@ -3609,7 +3675,7 @@ function injectStyles() {
 
 
     .custom-text-head span,
-    .custom-text-actions span {
+    .custom-text-actions span{
 
       font-size:
         12px;
@@ -3620,7 +3686,7 @@ function injectStyles() {
     }
 
 
-    #customPracticeText {
+    #customPracticeText{
 
       width:
         100%;
@@ -3662,7 +3728,7 @@ function injectStyles() {
     }
 
 
-    #customPracticeText:focus {
+    #customPracticeText:focus{
 
       border-color:
         var(--accent);
@@ -3674,12 +3740,12 @@ function injectStyles() {
     }
 
 
-    @media (
+    @media(
       max-width:
       768px
-    ) {
+    ){
 
-      #authArea {
+      #authArea{
 
         display:
           none !important;
@@ -3687,7 +3753,7 @@ function injectStyles() {
       }
 
 
-      .dm-mobile-signout {
+      .dm-mobile-signout{
 
         display:
           inline-flex;
@@ -3701,7 +3767,7 @@ function injectStyles() {
       }
 
 
-      .header-inner {
+      .header-inner{
 
         gap:
           8px;
@@ -3712,7 +3778,7 @@ function injectStyles() {
       }
 
 
-      .nav-tabs {
+      .nav-tabs{
 
         overflow-x:
           auto;
@@ -3726,7 +3792,7 @@ function injectStyles() {
       }
 
 
-      .nav-tabs::-webkit-scrollbar {
+      .nav-tabs::-webkit-scrollbar{
 
         display:
           none;
@@ -3738,9 +3804,10 @@ function injectStyles() {
   `;
 
 
-  document.head.appendChild(
-    style
-  );
+  document.head
+    .appendChild(
+      style
+    );
 
 }
 
