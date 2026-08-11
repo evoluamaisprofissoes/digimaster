@@ -1,9 +1,10 @@
 // =========================================
-// DigiMaster - Firebase Auth + Firestore v3.1
-// Evolua+ Profissoes
+// DigiMaster — Firebase Auth + Firestore v4.0
+// Evolua+ Profissões
+// Progresso por nível + datas de conclusão
 // =========================================
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 
 import {
   getAuth,
@@ -14,7 +15,7 @@ import {
   GoogleAuthProvider,
   signOut,
   updateProfile
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 import {
   getFirestore,
@@ -29,49 +30,61 @@ import {
   limit,
   getDocs,
   serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 
 // =========================================
-// FIREBASE CONFIG
+// CONFIGURAÇÃO FIREBASE
 // =========================================
 
 const firebaseConfig = {
 
-  apiKey: "AIzaSyB7WFaELI6h349TnHRbGXLDpQsUPrXUtio",
+  apiKey:
+    'AIzaSyB7WFaELI6h349TnHRbGXLDpQsUPrXUtio',
 
   authDomain:
-    "digimaster-evolua-a57f0.firebaseapp.com",
+    'digimaster-evolua-a57f0.firebaseapp.com',
 
   projectId:
-    "digimaster-evolua-a57f0",
+    'digimaster-evolua-a57f0',
 
   storageBucket:
-    "digimaster-evolua-a57f0.firebasestorage.app",
+    'digimaster-evolua-a57f0.firebasestorage.app',
 
   messagingSenderId:
-    "536548803200",
+    '536548803200',
 
   appId:
-    "1:536548803200:web:6c1e09bb82f74ceb641c65"
+    '1:536548803200:web:6c1e09bb82f74ceb641c65'
 
 };
 
 
-const app = initializeApp(firebaseConfig);
+const app =
+  initializeApp(
+    firebaseConfig
+  );
 
-const auth = getAuth(app);
 
-const db = getFirestore(app);
+const auth =
+  getAuth(app);
 
-const provider = new GoogleAuthProvider();
+
+const db =
+  getFirestore(app);
+
+
+const provider =
+  new GoogleAuthProvider();
 
 
 // =========================================
 // COMPARTILHAR FIRESTORE COM OUTROS SCRIPTS
 // =========================================
 
-window._firestoreDb = db;
+window._firestoreDb =
+  db;
+
 
 window._firestoreLib = {
 
@@ -100,80 +113,96 @@ window._firestoreLib = {
 };
 
 
-window.currentUser = null;
+window.currentUser =
+  null;
 
-window.isDigimasterAdmin = false;
+
+window.isDigimasterAdmin =
+  false;
 
 
 // =========================================
-// ADMINISTRADORES
+// ADMIN
 // =========================================
 
 const ADMIN_EMAILS = [
 
-  "evoluamaisprofissoes@gmail.com"
+  'evoluamaisprofissoes@gmail.com'
 
 ];
 
 
-const CORPORATE_ADMIN_DOMAIN =
-  "@evoluaprofissoes.com.br";
+const MIN_ACCURACY =
+
+  Number(
+
+    window
+      .DIGIMASTER_MIN_ACCURACY
+
+    ||
+
+    80
+
+  );
 
 
 // =========================================
-// VERIFICAR ADMINISTRADOR
+// VERIFICAR ADMIN
 // =========================================
 
-async function checkAdminAccess(user) {
+async function checkAdminAccess(
+  user
+) {
 
-  if (!user) return false;
+  if (!user) {
 
+    return false;
 
-  const email = String(
-    user.email || ""
-  )
-    .trim()
-    .toLowerCase();
-
-
-  const directAdmin =
-    ADMIN_EMAILS.includes(email);
+  }
 
 
-  const corporateAdmin =
-    email.endsWith(
-      CORPORATE_ADMIN_DOMAIN
-    );
+  const email =
+
+    String(
+      user.email ||
+      ''
+    )
+      .trim()
+      .toLowerCase();
 
 
-  // Também permite cadastrar admins
-  // futuramente em:
-  //
-  // admins/{UID}
-  //
-  // active: true
+  if (
+    ADMIN_EMAILS.includes(
+      email
+    )
+  ) {
+
+    return true;
+
+  }
+
 
   try {
 
-    const adminSnap =
+    const snap =
       await getDoc(
+
         doc(
           db,
-          "admins",
+          'admins',
           user.uid
         )
+
       );
 
 
-    const registeredAdmin =
-      adminSnap.exists() &&
-      adminSnap.data()?.active !== false;
-
-
     return (
-      directAdmin ||
-      corporateAdmin ||
-      registeredAdmin
+
+      snap.exists() &&
+
+      snap.data()?.active !==
+      false
+
     );
 
   }
@@ -181,19 +210,12 @@ async function checkAdminAccess(user) {
   catch (error) {
 
     console.warn(
-      "Admin check:",
+      'Admin check:',
       error
     );
 
 
-    // Mesmo que a regra de /admins
-    // ainda não esteja configurada,
-    // seu Gmail continua funcionando.
-
-    return (
-      directAdmin ||
-      corporateAdmin
-    );
+    return false;
 
   }
 
@@ -201,21 +223,23 @@ async function checkAdminAccess(user) {
 
 
 // =========================================
-// ESTADO DO LOGIN
+// ESTADO DE AUTENTICAÇÃO
 // =========================================
 
 onAuthStateChanged(
 
   auth,
 
-  async (user) => {
-
-    window.currentUser = user;
+  async user => {
 
 
-    // -------------------------
-    // USUÁRIO DESLOGADO
-    // -------------------------
+    window.currentUser =
+      user;
+
+
+    // =====================================
+    // DESLOGADO
+    // =====================================
 
     if (!user) {
 
@@ -225,19 +249,20 @@ onAuthStateChanged(
 
       renderLoggedOutUI();
 
+
       removeMobileSignout();
 
 
       const adminBtn =
         document.getElementById(
-          "adminNavBtn"
+          'adminNavBtn'
         );
 
 
       if (adminBtn) {
 
         adminBtn.style.display =
-          "none";
+          'none';
 
       }
 
@@ -247,16 +272,20 @@ onAuthStateChanged(
     }
 
 
-    // -------------------------
-    // USUÁRIO LOGADO
-    // -------------------------
+    // =====================================
+    // LOGADO
+    // =====================================
 
     try {
 
-      await ensureUserDoc(user);
+      await ensureUserDoc(
+        user
+      );
 
 
-      renderUserUI(user);
+      renderUserUI(
+        user
+      );
 
 
       ensureMobileSignout();
@@ -268,41 +297,62 @@ onAuthStateChanged(
 
 
       window.isDigimasterAdmin =
-        await checkAdminAccess(user);
+
+        await checkAdminAccess(
+          user
+        );
 
 
       const adminBtn =
         document.getElementById(
-          "adminNavBtn"
+          'adminNavBtn'
         );
 
 
       if (adminBtn) {
 
         adminBtn.style.display =
+
           window.isDigimasterAdmin
-            ? "block"
-            : "none";
+
+            ?
+
+            'block'
+
+            :
+
+            'none';
 
       }
 
 
       const skipHands =
+
         localStorage.getItem(
-          "digimaster_hands_seen"
-        ) === "true";
+          'digimaster_hands_seen'
+        )
+
+        ===
+
+        'true';
 
 
       if (
+
         !skipHands &&
+
         typeof window.showHandsModal ===
-          "function"
+        'function'
+
       ) {
 
         setTimeout(
+
           () =>
             window.showHandsModal(),
+
           700
+
         );
 
       }
@@ -312,7 +362,7 @@ onAuthStateChanged(
     catch (error) {
 
       console.error(
-        "Erro ao iniciar usuário:",
+        'Erro ao iniciar usuário:',
         error
       );
 
@@ -324,43 +374,57 @@ onAuthStateChanged(
 
 
 // =========================================
-// CRIAR / ATUALIZAR PERFIL DO ALUNO
+// CRIAR / ATUALIZAR USUÁRIO
 // =========================================
 
-async function ensureUserDoc(user) {
+async function ensureUserDoc(
+  user
+) {
 
   const userRef =
+
     doc(
       db,
-      "users",
+      'users',
       user.uid
     );
 
 
   const userSnap =
-    await getDoc(userRef);
+
+    await getDoc(
+      userRef
+    );
 
 
-  // -------------------------
+  // =====================================
   // PRIMEIRO ACESSO
-  // -------------------------
+  // =====================================
 
   if (!userSnap.exists()) {
 
     await setDoc(
+
       userRef,
+
       {
 
         name:
+
           user.displayName ||
-          "Aluno",
+
+          'Aluno',
 
         email:
+
           user.email ||
-          "",
+
+          '',
 
         photoURL:
+
           user.photoURL ||
+
           null,
 
         createdAt:
@@ -376,9 +440,16 @@ async function ensureUserDoc(user) {
           0,
 
         completedLessons:
-          0
+          0,
+
+        levelProgress:
+          {},
+
+        levelCompletions:
+          {}
 
       }
+
     );
 
 
@@ -387,22 +458,26 @@ async function ensureUserDoc(user) {
   }
 
 
-  // -------------------------
-  // ATUALIZAR DADOS
-  // -------------------------
+  // =====================================
+  // ATUALIZAR PERFIL
+  // =====================================
 
   const current =
     userSnap.data() ||
     {};
 
 
-  const patch = {};
+  const patch =
+    {};
 
 
   if (
+
     user.displayName &&
+
     current.name !==
       user.displayName
+
   ) {
 
     patch.name =
@@ -412,9 +487,12 @@ async function ensureUserDoc(user) {
 
 
   if (
+
     user.email &&
+
     current.email !==
       user.email
+
   ) {
 
     patch.email =
@@ -424,9 +502,12 @@ async function ensureUserDoc(user) {
 
 
   if (
+
     user.photoURL &&
+
     current.photoURL !==
       user.photoURL
+
   ) {
 
     patch.photoURL =
@@ -436,13 +517,17 @@ async function ensureUserDoc(user) {
 
 
   if (
-    Object.keys(patch)
-      .length
+    Object.keys(
+      patch
+    ).length
   ) {
 
     await updateDoc(
+
       userRef,
+
       patch
+
     );
 
   }
@@ -459,33 +544,46 @@ window.signInWithGoogle =
 
     try {
 
-      showAuthLoading(true);
-
-
-      await signInWithPopup(
-        auth,
-        provider
+      showAuthLoading(
+        true
       );
 
 
-      window.closeAuthModal?.();
+      await signInWithPopup(
+
+        auth,
+
+        provider
+
+      );
+
+
+      window
+        .closeAuthModal
+        ?.();
 
     }
 
     catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
 
 
       showAuthError(
-        "Erro ao entrar com Google. Tente novamente."
+
+        'Erro ao entrar com Google. Tente novamente.'
+
       );
 
     }
 
     finally {
 
-      showAuthLoading(false);
+      showAuthLoading(
+        false
+      );
 
     }
 
@@ -493,25 +591,27 @@ window.signInWithGoogle =
 
 
 // =========================================
-// LOGIN E-MAIL E SENHA
+// LOGIN E-MAIL
 // =========================================
 
 window.signInWithEmail =
   async function () {
 
     const email =
+
       document
         .getElementById(
-          "authEmail"
+          'authEmail'
         )
         ?.value
         ?.trim();
 
 
     const password =
+
       document
         .getElementById(
-          "authPass"
+          'authPass'
         )
         ?.value;
 
@@ -521,62 +621,73 @@ window.signInWithEmail =
       !password
     ) {
 
-      showAuthError(
-        "Preencha e-mail e senha."
-      );
+      return showAuthError(
 
-      return;
+        'Preencha e-mail e senha.'
+
+      );
 
     }
 
 
     try {
 
-      showAuthLoading(true);
-
-
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
+      showAuthLoading(
+        true
       );
 
 
-      window.closeAuthModal?.();
+      await signInWithEmailAndPassword(
+
+        auth,
+
+        email,
+
+        password
+
+      );
+
+
+      window
+        .closeAuthModal
+        ?.();
 
     }
 
     catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
 
 
-      if (
+      showAuthError(
+
         error.code ===
-          "auth/user-not-found" ||
+          'auth/user-not-found'
+
+        ||
+
         error.code ===
-          "auth/invalid-credential"
-      ) {
+          'auth/invalid-credential'
 
-        showAuthError(
-          "E-mail ou senha incorretos."
-        );
+          ?
 
-      }
+          'E-mail ou senha incorretos.'
 
-      else {
+          :
 
-        showAuthError(
-          "Erro ao entrar. Verifique seus dados."
-        );
+          'Erro ao entrar. Verifique seus dados.'
 
-      }
+      );
 
     }
 
     finally {
 
-      showAuthLoading(false);
+      showAuthLoading(
+        false
+      );
 
     }
 
@@ -584,111 +695,133 @@ window.signInWithEmail =
 
 
 // =========================================
-// CRIAR CONTA
+// CADASTRO
 // =========================================
 
 window.signUpWithEmail =
   async function () {
 
     const name =
+
       document
         .getElementById(
-          "authName"
+          'authName'
         )
         ?.value
         ?.trim();
 
 
     const email =
-      (
-        document
-          .getElementById(
-            "authEmailSignup"
-          )
-          ?.value
-          ?.trim()
-        ||
-        document
-          .getElementById(
-            "authEmail"
-          )
-          ?.value
-          ?.trim()
-      );
+
+      document
+        .getElementById(
+          'authEmailSignup'
+        )
+        ?.value
+        ?.trim()
+
+      ||
+
+      document
+        .getElementById(
+          'authEmail'
+        )
+        ?.value
+        ?.trim();
 
 
     const password =
-      (
-        document
-          .getElementById(
-            "authPassSignup"
-          )
-          ?.value
-        ||
-        document
-          .getElementById(
-            "authPass"
-          )
-          ?.value
-      );
+
+      document
+        .getElementById(
+          'authPassSignup'
+        )
+        ?.value
+
+      ||
+
+      document
+        .getElementById(
+          'authPass'
+        )
+        ?.value;
 
 
     if (
+
       !name ||
+
       !email ||
+
       !password
+
     ) {
 
-      showAuthError(
-        "Preencha todos os campos."
-      );
+      return showAuthError(
 
-      return;
+        'Preencha todos os campos.'
+
+      );
 
     }
 
 
     if (
-      password.length < 6
+      password.length <
+      6
     ) {
 
-      showAuthError(
-        "A senha precisa ter pelo menos 6 caracteres."
-      );
+      return showAuthError(
 
-      return;
+        'A senha precisa ter pelo menos 6 caracteres.'
+
+      );
 
     }
 
 
     try {
 
-      showAuthLoading(true);
+      showAuthLoading(
+        true
+      );
 
 
       const credential =
+
         await createUserWithEmailAndPassword(
+
           auth,
+
           email,
+
           password
+
         );
 
 
       await updateProfile(
+
         credential.user,
+
         {
           displayName:
             name
         }
+
       );
 
 
       await setDoc(
 
         doc(
+
           db,
-          "users",
+
+          'users',
+
           credential.user.uid
+
         ),
 
         {
@@ -698,8 +831,12 @@ window.signUpWithEmail =
           email,
 
           photoURL:
+
             credential.user
-              .photoURL ||
+              .photoURL
+
+            ||
+
             null,
 
           createdAt:
@@ -715,7 +852,13 @@ window.signUpWithEmail =
             0,
 
           completedLessons:
-            0
+            0,
+
+          levelProgress:
+            {},
+
+          levelCompletions:
+            {}
 
         },
 
@@ -727,39 +870,41 @@ window.signUpWithEmail =
       );
 
 
-      window.closeAuthModal?.();
+      window
+        .closeAuthModal
+        ?.();
 
     }
 
     catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
 
 
-      if (
+      showAuthError(
+
         error.code ===
-        "auth/email-already-in-use"
-      ) {
+          'auth/email-already-in-use'
 
-        showAuthError(
-          "E-mail já cadastrado. Faça login."
-        );
+          ?
 
-      }
+          'E-mail já cadastrado. Faça login.'
 
-      else {
+          :
 
-        showAuthError(
-          "Erro ao criar conta. Tente novamente."
-        );
+          'Erro ao criar conta. Tente novamente.'
 
-      }
+      );
 
     }
 
     finally {
 
-      showAuthLoading(false);
+      showAuthLoading(
+        false
+      );
 
     }
 
@@ -775,7 +920,9 @@ window.doSignOut =
 
     try {
 
-      await signOut(auth);
+      await signOut(
+        auth
+      );
 
 
       window.currentUser =
@@ -786,50 +933,45 @@ window.doSignOut =
         false;
 
 
-      const adminBtn =
-        document.getElementById(
-          "adminNavBtn"
+      document
+        .getElementById(
+          'adminNavBtn'
+        )
+        ?.style
+        .setProperty(
+          'display',
+          'none'
         );
-
-
-      if (adminBtn) {
-
-        adminBtn.style.display =
-          "none";
-
-      }
 
 
       if (
         typeof window.navigateTo ===
-        "function"
+        'function'
       ) {
 
         window.navigateTo(
-          "home"
+          'home'
         );
 
       }
 
 
-      if (
-        typeof window.showToast ===
-        "function"
-      ) {
-
-        window.showToast(
-          "👋 Até logo!"
+      window
+        .showToast
+        ?.(
+          '👋 Até logo!'
         );
-
-      }
 
     }
 
     catch (error) {
 
       console.error(
-        "Erro no logoff:",
+
+        'Erro no logoff:',
+
         error
+
       );
 
     }
@@ -842,7 +984,9 @@ window.doSignOut =
 // =========================================
 
 window.saveSessionCloud =
-  async function (data) {
+  async function (
+    data
+  ) {
 
     if (
       !window.currentUser
@@ -858,22 +1002,32 @@ window.saveSessionCloud =
 
 
     const mode =
+
       document
         .getElementById(
-          "modeSelect"
+          'modeSelect'
         )
-        ?.value ||
-      "words";
+        ?.value
+
+      ||
+
+      'words';
 
 
     const duration =
+
       Number(
+
         document
           .getElementById(
-            "durationSelect"
+            'durationSelect'
           )
-          ?.value ||
+          ?.value
+
+        ||
+
         60
+
       );
 
 
@@ -882,10 +1036,15 @@ window.saveSessionCloud =
       await addDoc(
 
         collection(
+
           db,
-          "users",
+
+          'users',
+
           uid,
-          "sessions"
+
+          'sessions'
+
         ),
 
         {
@@ -905,21 +1064,26 @@ window.saveSessionCloud =
 
 
       const userRef =
+
         doc(
+
           db,
-          "users",
+
+          'users',
+
           uid
+
         );
 
 
-      const userSnap =
+      const snap =
         await getDoc(
           userRef
         );
 
 
       const userData =
-        userSnap.data() ||
+        snap.data() ||
         {};
 
 
@@ -930,32 +1094,49 @@ window.saveSessionCloud =
         {
 
           totalSessions:
-            (
+
+            Number(
               userData
                 .totalSessions ||
               0
-            ) + 1,
+            )
+
+            +
+
+            1,
 
           bestWpm:
+
             Math.max(
-              userData
-                .bestWpm ||
-              0,
+
+              Number(
+                userData
+                  .bestWpm ||
+                0
+              ),
+
               Number(
                 data.wpm ||
                 0
               )
+
             ),
 
           bestAccuracy:
+
             Math.max(
-              userData
-                .bestAccuracy ||
-              0,
+
+              Number(
+                userData
+                  .bestAccuracy ||
+                0
+              ),
+
               Number(
                 data.accuracy ||
                 0
               )
+
             ),
 
           lastSession:
@@ -976,8 +1157,11 @@ window.saveSessionCloud =
     catch (error) {
 
       console.warn(
-        "Falha ao salvar sessão na nuvem:",
+
+        'Falha ao salvar sessão na nuvem:',
+
         error
+
       );
 
     }
@@ -986,7 +1170,542 @@ window.saveSessionCloud =
 
 
 // =========================================
-// SALVAR LIÇÃO
+// IDENTIFICAR NÍVEL DA LIÇÃO
+// =========================================
+
+function lessonLevelFromId(
+  lessonId
+) {
+
+  const prefix =
+
+    String(
+      lessonId ||
+      ''
+    )
+      .charAt(0)
+      .toLowerCase();
+
+
+  return (
+
+    {
+
+      b:
+        'basico',
+
+      i:
+        'intermediario',
+
+      a:
+        'avancado',
+
+      n:
+        'numeros'
+
+    }
+
+  )[prefix]
+
+  ||
+
+  null;
+
+}
+
+
+// =========================================
+// CONVERTER TIMESTAMP
+// =========================================
+
+function timestampMillis(
+  value
+) {
+
+  if (!value) {
+
+    return 0;
+
+  }
+
+
+  if (
+    typeof value.toMillis ===
+    'function'
+  ) {
+
+    return value.toMillis();
+
+  }
+
+
+  if (
+    typeof value.toDate ===
+    'function'
+  ) {
+
+    return value
+      .toDate()
+      .getTime();
+
+  }
+
+
+  const date =
+    new Date(
+      value
+    );
+
+
+  return Number.isNaN(
+    date.getTime()
+  )
+
+    ?
+
+    0
+
+    :
+
+    date.getTime();
+
+}
+
+
+// =========================================
+// ATUALIZAR RESUMO DOS NÍVEIS
+// =========================================
+
+async function refreshLevelSummary(
+  uid,
+  currentLessonId
+) {
+
+  const config =
+
+    window
+      .DIGIMASTER_LEVEL_CONFIG
+
+    ||
+
+    {};
+
+
+  const userRef =
+
+    doc(
+
+      db,
+
+      'users',
+
+      uid
+
+    );
+
+
+  const userSnap =
+
+    await getDoc(
+      userRef
+    );
+
+
+  const userData =
+
+    userSnap.data()
+
+    ||
+
+    {};
+
+
+  const previousCompletions =
+
+    userData
+      .levelCompletions
+
+    ||
+
+    {};
+
+
+  const newCompletions = {
+
+    ...previousCompletions
+
+  };
+
+
+  const levelProgress =
+    {};
+
+
+  const newlyCompleted =
+    [];
+
+
+  // =====================================
+  // CARREGAR LIÇÕES DO ALUNO
+  // =====================================
+
+  const lessonsSnap =
+
+    await getDocs(
+
+      collection(
+
+        db,
+
+        'users',
+
+        uid,
+
+        'lessons'
+
+      )
+
+    );
+
+
+  const lessonRecords =
+    [];
+
+
+  lessonsSnap.forEach(
+
+    item =>
+
+      lessonRecords.push({
+
+        id:
+          item.id,
+
+        ...item.data()
+
+      })
+
+  );
+
+
+  // =====================================
+  // CALCULAR CADA NÍVEL
+  // =====================================
+
+  for (
+
+    const [
+      levelKey,
+      level
+    ]
+
+    of
+
+    Object.entries(
+      config
+    )
+
+  ) {
+
+    const ids =
+
+      new Set(
+
+        level.ids ||
+        []
+
+      );
+
+
+    const passed =
+
+      lessonRecords.filter(
+
+        item =>
+
+          ids.has(
+
+            item.lessonId ||
+
+            item.id
+
+          )
+
+          &&
+
+          Number(
+            item.accuracy ||
+            0
+          )
+
+          >=
+
+          MIN_ACCURACY
+
+      );
+
+
+    const total =
+
+      Number(
+
+        level.total ||
+
+        ids.size ||
+
+        0
+
+      );
+
+
+    const completed =
+      passed.length;
+
+
+    const isComplete =
+
+      total > 0 &&
+
+      completed >=
+      total;
+
+
+    const percent =
+
+      total
+
+        ?
+
+        Math.min(
+
+          100,
+
+          Math.round(
+
+            (
+              completed /
+              total
+            )
+
+            *
+
+            100
+
+          )
+
+        )
+
+        :
+
+        0;
+
+
+    levelProgress[
+      levelKey
+    ] = {
+
+      completed,
+
+      total,
+
+      percent,
+
+      isComplete
+
+    };
+
+
+    // ===================================
+    // PRIMEIRA CONCLUSÃO DO NÍVEL
+    // ===================================
+
+    if (
+
+      isComplete &&
+
+      !previousCompletions[
+        levelKey
+      ]?.completedAt
+
+    ) {
+
+      let latestRecord =
+        null;
+
+
+      let latestMs =
+        0;
+
+
+      for (
+        const item
+        of
+        passed
+      ) {
+
+        const candidate =
+
+          item.firstCompletedAt
+
+          ||
+
+          item.completedAt;
+
+
+        const ms =
+
+          timestampMillis(
+            candidate
+          );
+
+
+        if (
+          ms >=
+          latestMs
+        ) {
+
+          latestMs =
+            ms;
+
+
+          latestRecord =
+            candidate;
+
+        }
+
+      }
+
+
+      newCompletions[
+        levelKey
+      ] = {
+
+        completed:
+          true,
+
+        completedAt:
+
+          latestRecord
+
+          ||
+
+          serverTimestamp(),
+
+        totalLessons:
+          total,
+
+        minAccuracy:
+          MIN_ACCURACY
+
+      };
+
+
+      newlyCompleted.push(
+        levelKey
+      );
+
+    }
+
+  }
+
+
+  // =====================================
+  // TOTAL DE LIÇÕES APROVADAS
+  // =====================================
+
+  const totalCompletedLessons =
+
+    lessonRecords.filter(
+
+      item =>
+
+        Number(
+          item.accuracy ||
+          0
+        )
+
+        >=
+
+        MIN_ACCURACY
+
+    ).length;
+
+
+  // =====================================
+  // ATUALIZAR PERFIL
+  // =====================================
+
+  await setDoc(
+
+    userRef,
+
+    {
+
+      completedLessons:
+        totalCompletedLessons,
+
+      lastLesson:
+        currentLessonId,
+
+      lastLessonAt:
+        serverTimestamp(),
+
+      levelProgress,
+
+      levelCompletions:
+        newCompletions
+
+    },
+
+    {
+      merge:
+        true
+    }
+
+  );
+
+
+  // =====================================
+  // AVISO DE NÍVEL CONCLUÍDO
+  // =====================================
+
+  if (
+    newlyCompleted.length
+  ) {
+
+    const labels =
+
+      newlyCompleted
+        .map(
+
+          key =>
+
+            config[key]
+              ?.title
+
+            ||
+
+            key
+
+        )
+        .join(
+          ', '
+        );
+
+
+    window
+      .showToast
+      ?.(
+        `🎓 Nível concluído: ${labels}! Certificação liberada.`
+      );
+
+  }
+
+}
+
+
+// =========================================
+// SALVAR LIÇÃO NO FIREBASE
 // =========================================
 
 window.saveLessonCloud =
@@ -1005,45 +1724,83 @@ window.saveLessonCloud =
     }
 
 
+    // =====================================
+    // MENOS DE 80% NÃO CONCLUI
+    // =====================================
+
+    if (
+
+      Number(
+        accuracy ||
+        0
+      )
+
+      <
+
+      MIN_ACCURACY
+
+    ) {
+
+      return;
+
+    }
+
+
     const uid =
       window.currentUser.uid;
+
+
+    const level =
+
+      lessonLevelFromId(
+        lessonId
+      );
 
 
     try {
 
       const lessonRef =
+
         doc(
+
           db,
-          "users",
+
+          'users',
+
           uid,
-          "lessons",
+
+          'lessons',
+
           lessonId
+
         );
 
 
-      const lessonSnap =
+      const snap =
+
         await getDoc(
           lessonRef
         );
 
 
       const previous =
-        lessonSnap.exists()
-          ? lessonSnap.data()
-          : null;
+
+        snap.exists()
+
+          ?
+
+          snap.data()
+
+          :
+
+          null;
 
 
-      if (
-        !previous ||
-        Number(
-          previous.wpm ||
-          0
-        ) <
-        Number(
-          wpm ||
-          0
-        )
-      ) {
+      // ===================================
+      // PRIMEIRA VEZ
+      // ===================================
+
+      if (!previous) {
 
         await setDoc(
 
@@ -1053,11 +1810,29 @@ window.saveLessonCloud =
 
             lessonId,
 
-            wpm,
+            level,
 
-            accuracy,
+            wpm:
+
+              Number(
+                wpm ||
+                0
+              ),
+
+            accuracy:
+
+              Number(
+                accuracy ||
+                0
+              ),
 
             completedAt:
+              serverTimestamp(),
+
+            firstCompletedAt:
+              serverTimestamp(),
+
+            updatedAt:
               serverTimestamp()
 
           }
@@ -1067,39 +1842,108 @@ window.saveLessonCloud =
       }
 
 
-      const allLessons =
-        await getDocs(
+      // ===================================
+      // REPETIÇÃO DA LIÇÃO
+      // ===================================
 
-          collection(
-            db,
-            "users",
-            uid,
-            "lessons"
-          )
+      else {
+
+        await setDoc(
+
+          lessonRef,
+
+          {
+
+            lessonId,
+
+            level:
+
+              previous.level
+
+              ||
+
+              level,
+
+            wpm:
+
+              Math.max(
+
+                Number(
+                  previous.wpm ||
+                  0
+                ),
+
+                Number(
+                  wpm ||
+                  0
+                )
+
+              ),
+
+            accuracy:
+
+              Math.max(
+
+                Number(
+                  previous.accuracy ||
+                  0
+                ),
+
+                Number(
+                  accuracy ||
+                  0
+                )
+
+              ),
+
+            completedAt:
+
+              previous.completedAt
+
+              ||
+
+              previous.firstCompletedAt
+
+              ||
+
+              serverTimestamp(),
+
+            firstCompletedAt:
+
+              previous.firstCompletedAt
+
+              ||
+
+              previous.completedAt
+
+              ||
+
+              serverTimestamp(),
+
+            updatedAt:
+              serverTimestamp()
+
+          },
+
+          {
+            merge:
+              true
+          }
 
         );
 
+      }
 
-      await updateDoc(
 
-        doc(
-          db,
-          "users",
-          uid
-        ),
+      // ===================================
+      // RECALCULAR NÍVEIS
+      // ===================================
 
-        {
+      await refreshLevelSummary(
 
-          completedLessons:
-            allLessons.size,
+        uid,
 
-          lastLesson:
-            lessonId,
-
-          lastLessonAt:
-            serverTimestamp()
-
-        }
+        lessonId
 
       );
 
@@ -1108,8 +1952,11 @@ window.saveLessonCloud =
     catch (error) {
 
       console.warn(
-        "Falha ao salvar lição na nuvem:",
+
+        'Falha ao salvar lição na nuvem:',
+
         error
+
       );
 
     }
@@ -1118,7 +1965,7 @@ window.saveLessonCloud =
 
 
 // =========================================
-// SINCRONIZAR PROGRESSO
+// SINCRONIZAR DADOS DA NUVEM
 // =========================================
 
 async function syncFromCloud(
@@ -1127,21 +1974,31 @@ async function syncFromCloud(
 
   try {
 
+    // =====================================
+    // SESSÕES
+    // =====================================
+
     const sessionSnap =
+
       await getDocs(
 
         query(
 
           collection(
+
             db,
-            "users",
+
+            'users',
+
             uid,
-            "sessions"
+
+            'sessions'
+
           ),
 
           orderBy(
-            "timestamp",
-            "desc"
+            'timestamp',
+            'desc'
           ),
 
           limit(
@@ -1153,11 +2010,13 @@ async function syncFromCloud(
       );
 
 
-    const sessions = [];
+    const sessions =
+      [];
 
 
     sessionSnap.forEach(
-      (item) => {
+
+      item => {
 
         const data =
           item.data();
@@ -1187,44 +2046,55 @@ async function syncFromCloud(
             data.duration,
 
           date:
+
             data.timestamp
-              ?.toDate?.()
+              ?.toDate
+              ?.()
               ?.toISOString()
+
             ||
+
             new Date()
               .toISOString()
 
         });
 
       }
+
     );
 
 
-    if (
-      sessions.length
-    ) {
+    localStorage.setItem(
 
-      localStorage.setItem(
+      'digimaster_sessions',
 
-        "digimaster_sessions",
+      JSON.stringify(
 
-        JSON.stringify(
-          sessions.reverse()
-        )
+        sessions.reverse()
 
-      );
+      )
 
-    }
+    );
 
+
+    // =====================================
+    // LIÇÕES
+    // =====================================
 
     const lessonSnap =
+
       await getDocs(
 
         collection(
+
           db,
-          "users",
+
+          'users',
+
           uid,
-          "lessons"
+
+          'lessons'
+
         )
 
       );
@@ -1235,18 +2105,42 @@ async function syncFromCloud(
 
 
     lessonSnap.forEach(
-      (item) => {
+
+      item => {
 
         const data =
           item.data();
 
 
+        const first =
+
+          data.firstCompletedAt
+
+          ||
+
+          data.completedAt;
+
+
         lessonsProgress[
+
           data.lessonId
+
+          ||
+
+          item.id
+
         ] = {
 
           completed:
-            true,
+
+            Number(
+              data.accuracy ||
+              0
+            )
+
+            >=
+
+            MIN_ACCURACY,
 
           wpm:
             data.wpm,
@@ -1255,64 +2149,74 @@ async function syncFromCloud(
             data.accuracy,
 
           date:
-            data.completedAt
-              ?.toDate?.()
+
+            first
+              ?.toDate
+              ?.()
               ?.toISOString()
+
             ||
+
             new Date()
-              .toISOString()
+              .toISOString(),
+
+          firstCompletedAt:
+
+            first
+              ?.toDate
+              ?.()
+              ?.toISOString()
+
+            ||
+
+            null
 
         };
 
       }
+
     );
 
 
-    if (
-      Object.keys(
+    localStorage.setItem(
+
+      'digimaster_lessons',
+
+      JSON.stringify(
         lessonsProgress
-      ).length
-    ) {
+      )
 
-      localStorage.setItem(
-
-        "digimaster_lessons",
-
-        JSON.stringify(
-          lessonsProgress
-        )
-
-      );
-
-    }
+    );
 
 
-    if (
-      typeof window.renderStats ===
-      "function"
-    ) {
+    // =====================================
+    // ATUALIZAR INTERFACE
+    // =====================================
 
-      window.renderStats();
+    window
+      .renderStats
+      ?.();
 
-    }
+
+    window
+      .renderLessons
+      ?.();
 
 
-    if (
-      typeof window.renderLessons ===
-      "function"
-    ) {
-
-      window.renderLessons();
-
-    }
+    window
+      .updateCertificateUI
+      ?.();
 
   }
 
   catch (error) {
 
     console.warn(
-      "Falha na sincronização:",
+
+      'Falha na sincronização:',
+
       error
+
     );
 
   }
@@ -1321,7 +2225,48 @@ async function syncFromCloud(
 
 
 // =========================================
-// INTERFACE DO USUÁRIO
+// ESCAPAR HTML
+// =========================================
+
+function escapeHtml(
+  value
+) {
+
+  return String(
+    value ??
+    ''
+  )
+
+    .replaceAll(
+      '&',
+      '&amp;'
+    )
+
+    .replaceAll(
+      '<',
+      '&lt;'
+    )
+
+    .replaceAll(
+      '>',
+      '&gt;'
+    )
+
+    .replaceAll(
+      '"',
+      '&quot;'
+    )
+
+    .replaceAll(
+      "'",
+      '&#039;'
+    );
+
+}
+
+
+// =========================================
+// INTERFACE USUÁRIO LOGADO
 // =========================================
 
 function renderUserUI(
@@ -1329,8 +2274,9 @@ function renderUserUI(
 ) {
 
   const area =
+
     document.getElementById(
-      "authArea"
+      'authArea'
     );
 
 
@@ -1341,14 +2287,24 @@ function renderUserUI(
   }
 
 
+  const name =
+
+    user.displayName
+
+    ||
+
+    user.email
+
+    ||
+
+    'Aluno';
+
+
   const initial =
+
     escapeHtml(
 
-      (
-        user.displayName ||
-        user.email ||
-        "A"
-      )
+      name
         .charAt(0)
         .toUpperCase()
 
@@ -1356,23 +2312,40 @@ function renderUserUI(
 
 
   const photo =
+
     user.photoURL
 
       ?
 
-      `<img
+      `
+
+      <img
+
         src="${escapeHtml(
           user.photoURL
         )}"
+
         class="user-avatar"
+
         alt="Perfil"
-      >`
+
+      >
+
+      `
 
       :
 
-      `<div
+      `
+
+      <div
         class="user-avatar-placeholder"
-      >${initial}</div>`;
+      >
+
+        ${initial}
+
+      </div>
+
+      `;
 
 
   area.innerHTML = `
@@ -1382,11 +2355,9 @@ function renderUserUI(
       ${photo}
 
       <span class="user-name">
-        ${escapeHtml(
-          user.displayName ||
-          user.email ||
-          "Aluno"
-        )}
+
+        ${escapeHtml(name)}
+
       </span>
 
       <button
@@ -1394,7 +2365,9 @@ function renderUserUI(
         type="button"
         onclick="doSignOut()"
       >
+
         Sair
+
       </button>
 
     </div>
@@ -1411,50 +2384,54 @@ function renderUserUI(
 function renderLoggedOutUI() {
 
   const area =
+
     document.getElementById(
-      "authArea"
+      'authArea'
     );
 
 
-  if (!area) {
+  if (area) {
 
-    return;
+    area.innerHTML = `
+
+      <button
+        class="btn-login"
+        type="button"
+        onclick="openAuthModal('login')"
+      >
+
+        Entrar / Cadastrar
+
+      </button>
+
+    `;
 
   }
-
-
-  area.innerHTML = `
-
-    <button
-      class="btn-login"
-      type="button"
-      onclick="openAuthModal('login')"
-    >
-      Entrar / Cadastrar
-    </button>
-
-  `;
 
 }
 
 
 // =========================================
-// LOGOFF NO CELULAR
+// LOGOFF MOBILE
 // =========================================
 
 function ensureMobileSignout() {
 
   const header =
+
     document.querySelector(
-      ".header-inner"
+      '.header-inner'
     );
 
 
   if (
+
     !header ||
+
     document.getElementById(
-      "dmMobileSignout"
+      'dmMobileSignout'
     )
+
   ) {
 
     return;
@@ -1463,30 +2440,31 @@ function ensureMobileSignout() {
 
 
   const button =
+
     document.createElement(
-      "button"
+      'button'
     );
 
 
   button.id =
-    "dmMobileSignout";
+    'dmMobileSignout';
 
 
   button.className =
-    "dm-mobile-signout";
+    'dm-mobile-signout';
 
 
   button.type =
-    "button";
+    'button';
 
 
   button.textContent =
-    "↪ Sair";
+    '↪ Sair';
 
 
   button.addEventListener(
 
-    "click",
+    'click',
 
     () =>
       window.doSignOut()
@@ -1505,7 +2483,7 @@ function removeMobileSignout() {
 
   document
     .getElementById(
-      "dmMobileSignout"
+      'dmMobileSignout'
     )
     ?.remove();
 
@@ -1513,17 +2491,18 @@ function removeMobileSignout() {
 
 
 // =========================================
-// MODAL DE LOGIN
+// MODAL LOGIN
 // =========================================
 
 window.openAuthModal =
   function (
-    mode = "login"
+    mode = 'login'
   ) {
 
     const modal =
+
       document.getElementById(
-        "authModal"
+        'authModal'
       );
 
 
@@ -1535,7 +2514,7 @@ window.openAuthModal =
 
 
     modal.classList.add(
-      "open"
+      'open'
     );
 
 
@@ -1549,19 +2528,14 @@ window.openAuthModal =
 window.closeAuthModal =
   function () {
 
-    const modal =
-      document.getElementById(
-        "authModal"
+    document
+      .getElementById(
+        'authModal'
+      )
+      ?.classList
+      .remove(
+        'open'
       );
-
-
-    if (modal) {
-
-      modal.classList.remove(
-        "open"
-      );
-
-    }
 
 
     clearAuthError();
@@ -1570,99 +2544,92 @@ window.closeAuthModal =
 
 
 window.switchAuthMode =
-  function (mode) {
+  function (
+    mode
+  ) {
 
     const loginPanel =
+
       document.getElementById(
-        "loginPanel"
+        'loginPanel'
       );
 
 
     const signupPanel =
+
       document.getElementById(
-        "signupPanel"
+        'signupPanel'
       );
 
 
     const tabLogin =
+
       document.getElementById(
-        "tabLogin"
+        'tabLogin'
       );
 
 
     const tabSignup =
+
       document.getElementById(
-        "tabSignup"
+        'tabSignup'
       );
 
 
-    if (
-      mode === "login"
-    ) {
+    const login =
 
-      if (loginPanel) {
-
-        loginPanel.style.display =
-          "flex";
-
-      }
+      mode ===
+      'login';
 
 
-      if (signupPanel) {
+    if (loginPanel) {
 
-        signupPanel.style.display =
-          "none";
+      loginPanel.style.display =
 
-      }
+        login
 
+          ?
 
-      tabLogin
-        ?.classList
-        .add(
-          "active"
-        );
+          'flex'
 
+          :
 
-      tabSignup
-        ?.classList
-        .remove(
-          "active"
-        );
+          'none';
 
     }
 
-    else {
 
-      if (loginPanel) {
+    if (signupPanel) {
 
-        loginPanel.style.display =
-          "none";
+      signupPanel.style.display =
 
-      }
+        login
 
+          ?
 
-      if (signupPanel) {
+          'none'
 
-        signupPanel.style.display =
-          "flex";
+          :
 
-      }
-
-
-      tabLogin
-        ?.classList
-        .remove(
-          "active"
-        );
-
-
-      tabSignup
-        ?.classList
-        .add(
-          "active"
-        );
+          'flex';
 
     }
+
+
+    tabLogin
+      ?.classList
+      .toggle(
+        'active',
+        login
+      );
+
+
+    tabSignup
+      ?.classList
+      .toggle(
+        'active',
+        !login
+      );
 
 
     clearAuthError();
@@ -1671,7 +2638,7 @@ window.switchAuthMode =
 
 
 // =========================================
-// ERROS DO LOGIN
+// ERRO AUTENTICAÇÃO
 // =========================================
 
 function showAuthError(
@@ -1680,19 +2647,21 @@ function showAuthError(
 
   document
     .querySelectorAll(
-      ".auth-error"
+      '.auth-error'
     )
     .forEach(
-      (element) => {
+
+      element => {
 
         element.textContent =
           message;
 
 
         element.style.display =
-          "block";
+          'block';
 
       }
+
     );
 
 }
@@ -1702,19 +2671,21 @@ function clearAuthError() {
 
   document
     .querySelectorAll(
-      ".auth-error"
+      '.auth-error'
     )
     .forEach(
-      (element) => {
+
+      element => {
 
         element.textContent =
-          "";
+          '';
 
 
         element.style.display =
-          "none";
+          'none';
 
       }
+
     );
 
 }
@@ -1726,120 +2697,81 @@ function showAuthLoading(
 
   document
     .querySelectorAll(
-      ".auth-submit-btn"
+      '.auth-submit-btn'
     )
     .forEach(
-      (button) => {
+
+      button => {
 
         button.disabled =
           loading;
 
 
         button.style.opacity =
+
           loading
-            ? "0.6"
-            : "1";
+
+            ?
+
+            '.6'
+
+            :
+
+            '1';
 
       }
+
     );
 
 }
 
 
 // =========================================
-// PROTEÇÃO DE HTML
-// =========================================
-
-function escapeHtml(
-  value
-) {
-
-  return String(
-    value ?? ""
-  )
-
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-
-}
-
-
-// =========================================
-// BANCO EXTRA DE PALAVRAS
+// PALAVRAS EXTRAS
 // =========================================
 
 const EXTRA_WORDS = {
 
   basico: [
 
-    "casa mesa sala porta janela livro pasta tecla mouse tela aluno curso aula escola treino ritmo foco pratica evolua",
+    'casa mesa sala porta janela livro pasta tecla mouse tela aluno curso aula escola treino ritmo foco pratica evolua',
 
-    "gato pato rato bola cola mala vela roda dado dedo lago mapa nome soma vida dia noite luz som cor voz tempo",
+    'arquivo pasta login senha dados rede nuvem email texto fonte pagina bloco curso aluno prova nota aula tarefa',
 
-    "arquivo pasta login senha dados rede nuvem email texto fonte pagina bloco curso aluno prova nota aula tarefa",
-
-    "atender vender falar ouvir ajudar cliente caixa estoque loja pedido prazo valor troco conta ficha nome telefone"
+    'atender vender falar ouvir ajudar cliente caixa estoque loja pedido prazo valor troco conta ficha nome telefone'
 
   ],
 
 
   intermediario: [
 
-    "cliente proposta orçamento contrato relatório reunião agenda planilha cadastro atendimento processo resultado equipe tarefa prazo meta análise desempenho",
+    'cliente proposta orçamento contrato relatório reunião agenda planilha cadastro atendimento processo resultado equipe tarefa prazo meta análise desempenho',
 
-    "computador teclado monitor impressora sistema aplicativo navegador arquivo backup segurança senha autenticação internet rede servidor nuvem produtividade",
+    'computador teclado monitor impressora sistema aplicativo navegador arquivo backup segurança senha autenticação internet rede servidor nuvem produtividade',
 
-    "administração financeiro marketing vendas recursos humanos logística estoque compras atendimento planejamento organização comunicação liderança qualidade",
-
-    "estudo prática consistência velocidade precisão concentração postura disciplina rotina aprendizado evolução habilidade profissional oportunidade carreira"
+    'administração financeiro marketing vendas recursos humanos logística estoque compras atendimento planejamento organização comunicação liderança qualidade'
 
   ],
 
 
   avancado: [
 
-    "automação inteligência artificial análise de dados cibersegurança computação em nuvem desenvolvimento integração algoritmo infraestrutura governança produtividade transformação digital",
+    'automação inteligência artificial análise de dados cibersegurança computação em nuvem desenvolvimento integração algoritmo infraestrutura governança produtividade transformação digital',
 
-    "planejamento estratégico indicadores de desempenho experiência do cliente gestão de projetos melhoria contínua tomada de decisão comunicação corporativa liderança colaboração inovação",
+    'planejamento estratégico indicadores de desempenho experiência do cliente gestão de projetos melhoria contínua tomada de decisão comunicação corporativa liderança colaboração inovação',
 
-    "banco de dados arquitetura de software interface programação protocolo autenticação criptografia virtualização escalabilidade disponibilidade observabilidade manutenção implantação",
-
-    "mercado trabalho qualificação empregabilidade competência repertório adaptação pensamento crítico resolução de problemas criatividade responsabilidade autonomia comunicação"
+    'banco de dados arquitetura de software interface programação protocolo autenticação criptografia virtualização escalabilidade disponibilidade observabilidade manutenção implantação'
 
   ],
 
 
   numeros: [
 
-    "10 20 30 40 50 60 70 80 90 100 125 250 375 500 750 1000 1500 2500 5000 10000",
+    '10 20 30 40 50 60 70 80 90 100 125 250 375 500 750 1000 1500 2500 5000 10000',
 
-    "R$ 19,90 R$ 49,90 R$ 99,00 R$ 149,90 R$ 299,00 R$ 799,90 R$ 1.500,00 R$ 2.750,50",
+    'R$ 19,90 R$ 49,90 R$ 99,00 R$ 149,90 R$ 299,00 R$ 799,90 R$ 1.500,00 R$ 2.750,50',
 
-    "(65) 99999-1234 (11) 98888-5678 78280-000 78305-000 01/08/2026 10/08/2026 31/12/2026",
-
-    "pedido 1024 nota 4587 cliente 0021 item 17 quantidade 24 desconto 10% total R$ 899,00 parcela 06 vencimento 10/09/2026"
+    '(65) 99999-1234 (11) 98888-5678 78280-000 78305-000 01/08/2026 10/08/2026 31/12/2026'
 
   ]
 
@@ -1847,63 +2779,51 @@ const EXTRA_WORDS = {
 
 
 // =========================================
-// BANCO EXTRA DE TEXTOS
+// TEXTOS EXTRAS
 // =========================================
 
 const EXTRA_TEXTS = {
 
   basico: [
 
-    "A prática de digitação melhora quando o aluno mantém um ritmo calmo e constante. O objetivo no início não é correr. O mais importante é usar os dedos corretos, evitar olhar para o teclado e reduzir os erros a cada tentativa. Com alguns minutos de treino por dia, os movimentos ficam mais naturais e a velocidade começa a crescer.",
+    'A prática de digitação melhora quando o aluno mantém um ritmo calmo e constante. O mais importante no início é usar os dedos corretos, evitar olhar para o teclado e reduzir os erros a cada tentativa.',
 
-    "No ambiente de trabalho, digitar bem ajuda em tarefas simples como preencher cadastros, escrever mensagens, registrar pedidos e organizar informações. Uma pessoa que domina o teclado consegue dedicar mais atenção ao conteúdo do que ao esforço de encontrar cada tecla.",
+    'No ambiente de trabalho, digitar bem ajuda em tarefas como preencher cadastros, escrever mensagens, registrar pedidos e organizar informações.',
 
-    "O computador faz parte de muitas profissões. Atendimento, vendas, administração, estoque, farmácia e serviços financeiros usam sistemas que exigem digitação. Aprender a escrever com precisão no teclado é uma habilidade prática que acompanha o profissional durante toda a carreira.",
-
-    "Treinar todos os dias por pouco tempo costuma ser melhor do que fazer uma sessão longa apenas uma vez por semana. A repetição ajuda o cérebro e as mãos a memorizar os movimentos. Aos poucos, o aluno deixa de pensar em cada tecla e passa a digitar palavras inteiras com mais confiança."
+    'Treinar todos os dias por pouco tempo ajuda o cérebro e as mãos a memorizar os movimentos. Aos poucos, a digitação se torna mais natural.'
 
   ],
 
 
   intermediario: [
 
-    "A produtividade no trabalho depende de pequenas habilidades que se somam ao longo do dia. Saber digitar com velocidade e precisão reduz o tempo gasto em e-mails, relatórios, sistemas de atendimento, planilhas e cadastros. Quando a digitação deixa de exigir esforço consciente, o profissional consegue concentrar energia na qualidade da informação e na solução do problema.",
+    'A produtividade no trabalho depende de pequenas habilidades que se somam ao longo do dia. Digitar com velocidade e precisão reduz o tempo gasto em e-mails, relatórios, sistemas e cadastros.',
 
-    "Organização digital é uma competência importante em qualquer empresa. Criar nomes claros para arquivos, manter pastas bem estruturadas, utilizar senhas fortes e fazer cópias de segurança reduz perdas de tempo e evita muitos problemas. A tecnologia entrega melhores resultados quando existe método por trás do uso das ferramentas.",
+    'Organização digital é uma competência importante. Criar nomes claros para arquivos, manter pastas estruturadas e fazer cópias de segurança reduz perdas de tempo.',
 
-    "Um bom atendimento começa antes da resposta ao cliente. É preciso ouvir, registrar corretamente os dados, entender a necessidade e comunicar a solução de maneira clara. Em sistemas de atendimento, erros de digitação podem gerar telefones incorretos, valores errados e informações incompletas. Por isso, precisão e atenção caminham juntas.",
-
-    "Planilhas são usadas para controlar vendas, estoque, despesas, metas e indicadores. Mesmo quem não trabalha diretamente no setor financeiro costuma lidar com números e registros. Digitar valores corretamente, revisar informações e dominar atalhos básicos pode tornar a rotina muito mais rápida e segura.",
-
-    "A aprendizagem profissional acontece pela combinação de teoria e prática. Assistir a uma aula ajuda a entender o conceito, mas é a execução repetida que cria habilidade. Na digitação, essa diferença é evidente: quanto mais o aluno pratica corretamente, mais automática se torna a movimentação dos dedos."
+    'Um bom atendimento exige ouvir, registrar corretamente os dados, entender a necessidade e comunicar a solução de maneira clara.'
 
   ],
 
 
   avancado: [
 
-    "A transformação digital não acontece apenas quando uma empresa compra novos computadores ou contrata um sistema. Ela exige mudança de processos, integração de informações, capacitação das pessoas e decisões baseadas em dados. Profissionais capazes de aprender novas ferramentas rapidamente têm vantagem porque conseguem adaptar a rotina sem perder produtividade.",
+    'A transformação digital exige mudança de processos, integração de informações, capacitação das pessoas e decisões baseadas em dados.',
 
-    "A inteligência artificial está ampliando a capacidade de automatizar tarefas repetitivas, analisar grandes volumes de informação e apoiar decisões. Comunicação, pensamento crítico, responsabilidade, criatividade e conhecimento do contexto continuam essenciais para avaliar resultados e utilizar a tecnologia de forma adequada.",
+    'A inteligência artificial amplia a capacidade de automatizar tarefas e analisar informações, enquanto pensamento crítico e responsabilidade continuam essenciais.',
 
-    "Cibersegurança depende tanto de tecnologia quanto de comportamento. Senhas reutilizadas, links maliciosos, arquivos desconhecidos e dispositivos sem atualização podem abrir espaço para ataques. Empresas reduzem riscos quando combinam ferramentas de proteção com treinamento frequente e políticas claras.",
-
-    "Dados de qualidade permitem enxergar padrões que seriam difíceis de perceber apenas pela experiência. Indicadores de vendas, produtividade, satisfação e custos ajudam gestores a comparar períodos, testar hipóteses e definir prioridades. O valor do dado depende de registros corretos e interpretação adequada.",
-
-    "O desenvolvimento profissional exige capacidade de aprender continuamente. Ferramentas mudam, processos evoluem e novas funções surgem com rapidez. Quem constrói uma base sólida em tecnologia, comunicação e resolução de problemas consegue aproveitar melhor cursos, treinamentos e experiências práticas."
+    'Cibersegurança depende tanto de tecnologia quanto de comportamento. Senhas fortes, atualizações e atenção a mensagens suspeitas reduzem riscos.'
 
   ],
 
 
   numeros: [
 
-    "Relatório 08/2026. Foram registrados 125 atendimentos, 47 vendas e faturamento de R$ 18.745,90. A meta mensal é de R$ 25.000,00. Restam 12 dias úteis para atingir 100% do objetivo. O ticket médio atual é de R$ 398,85 e a taxa de conversão foi de 37,6%.",
+    'Relatório 08/2026. Foram registrados 125 atendimentos, 47 vendas e faturamento de R$ 18.745,90. A meta mensal é de R$ 25.000,00.',
 
-    "Pedido 45821. Cliente 00374. Quantidade 18 unidades. Valor unitário R$ 49,90. Subtotal R$ 898,20. Desconto 10%. Total final R$ 808,38. Pagamento em 3 parcelas de R$ 269,46 com vencimentos em 10/08/2026, 10/09/2026 e 10/10/2026.",
+    'Pedido 45821. Cliente 00374. Quantidade 18 unidades. Valor unitário R$ 49,90. Subtotal R$ 898,20. Desconto 10%. Total R$ 808,38.',
 
-    "Cadastro: telefone (65) 99999-1234, CEP 78305-000, protocolo 202608104587, atendimento iniciado às 14:35 e finalizado às 15:12. Foram enviados 3 arquivos, registrados 2 contatos e agendado retorno para 17/08/2026 às 09:30.",
-
-    "Estoque inicial 1.250 unidades. Entradas 375 unidades. Saídas 842 unidades. Estoque final 783 unidades. Custo médio R$ 27,45. Valor estimado do estoque R$ 21.493,35. Ponto de reposição definido em 350 unidades."
+    'Cadastro: telefone (65) 99999-1234, CEP 78305-000, protocolo 202608104587, atendimento iniciado às 14:35 e finalizado às 15:12.'
 
   ]
 
@@ -1911,7 +2831,7 @@ const EXTRA_TEXTS = {
 
 
 // =========================================
-// ESCOLHER ITEM ALEATÓRIO
+// ITEM ALEATÓRIO
 // =========================================
 
 function randomFrom(
@@ -1919,65 +2839,116 @@ function randomFrom(
 ) {
 
   return list[
+
     Math.floor(
+
       Math.random() *
       list.length
+
     )
+
   ];
 
 }
 
 
 // =========================================
-// NOVOS MODOS E TEMPOS
+// VISIBILIDADE TEXTO PERSONALIZADO
+// =========================================
+
+function updateCustomTextVisibility() {
+
+  const panel =
+
+    document.getElementById(
+      'customTextPanel'
+    );
+
+
+  const mode =
+
+    document
+      .getElementById(
+        'modeSelect'
+      )
+      ?.value;
+
+
+  if (panel) {
+
+    panel.style.display =
+
+      mode ===
+      'custom'
+
+        ?
+
+        'block'
+
+        :
+
+        'none';
+
+  }
+
+}
+
+
+// =========================================
+// MELHORIAS DA PRÁTICA
 // =========================================
 
 function installPracticeEnhancements() {
 
   const durationSelect =
+
     document.getElementById(
-      "durationSelect"
+      'durationSelect'
     );
 
 
   const modeSelect =
+
     document.getElementById(
-      "modeSelect"
+      'modeSelect'
     );
 
 
   const controls =
+
     document.querySelector(
-      ".practice-controls"
+      '.practice-controls'
     );
 
 
-  // -------------------------
+  // =====================================
   // NOVOS TEMPOS
-  // -------------------------
+  // =====================================
 
-  if (durationSelect) {
+  if (
+    durationSelect
+  ) {
 
     [
 
       [
-        "180",
-        "3min"
+        '180',
+        '3min'
       ],
 
       [
-        "300",
-        "5min"
+        '300',
+        '5min'
       ],
 
       [
-        "600",
-        "10min"
+        '600',
+        '10min'
       ],
 
       [
-        "900",
-        "15min"
+        '900',
+        '15min'
       ]
 
     ].forEach(
@@ -1990,15 +2961,20 @@ function installPracticeEnhancements() {
       ) => {
 
         if (
+
           !durationSelect
             .querySelector(
+
               `option[value="${value}"]`
+
             )
+
         ) {
 
           const option =
+
             document.createElement(
-              "option"
+              'option'
             );
 
 
@@ -2024,30 +3000,34 @@ function installPracticeEnhancements() {
   }
 
 
-  // -------------------------
+  // =====================================
   // TEXTO PERSONALIZADO
-  // -------------------------
+  // =====================================
 
   if (
+
     modeSelect &&
+
     !modeSelect
       .querySelector(
         'option[value="custom"]'
       )
+
   ) {
 
     const option =
+
       document.createElement(
-        "option"
+        'option'
       );
 
 
     option.value =
-      "custom";
+      'custom';
 
 
     option.textContent =
-      "Texto personalizado";
+      'Texto personalizado';
 
 
     modeSelect.appendChild(
@@ -2057,29 +3037,33 @@ function installPracticeEnhancements() {
   }
 
 
-  // -------------------------
-  // CAMPO DE TEXTO
-  // -------------------------
+  // =====================================
+  // CAMPO DO TEXTO PERSONALIZADO
+  // =====================================
 
   if (
+
     controls &&
+
     !document.getElementById(
-      "customTextPanel"
+      'customTextPanel'
     )
+
   ) {
 
     const panel =
+
       document.createElement(
-        "div"
+        'div'
       );
 
 
     panel.id =
-      "customTextPanel";
+      'customTextPanel';
 
 
     panel.className =
-      "custom-text-panel";
+      'custom-text-panel';
 
 
     panel.innerHTML = `
@@ -2105,9 +3089,13 @@ function installPracticeEnhancements() {
       </div>
 
       <textarea
+
         id="customPracticeText"
+
         maxlength="12000"
+
         placeholder="Cole ou digite aqui o texto para praticar..."
+
       ></textarea>
 
       <div class="custom-text-actions">
@@ -2117,9 +3105,13 @@ function installPracticeEnhancements() {
         </span>
 
         <button
+
           type="button"
+
           class="btn-secondary"
+
           id="customApplyBtn"
+
         >
           Aplicar texto
         </button>
@@ -2130,35 +3122,45 @@ function installPracticeEnhancements() {
 
 
     controls.insertAdjacentElement(
-      "afterend",
+
+      'afterend',
+
       panel
+
     );
 
 
     const textarea =
+
       panel.querySelector(
-        "#customPracticeText"
+        '#customPracticeText'
       );
 
 
     const count =
+
       panel.querySelector(
-        "#customTextCount"
+        '#customTextCount'
       );
 
 
     if (textarea) {
 
       textarea.value =
+
         localStorage.getItem(
-          "digimaster_custom_text"
-        ) ||
-        "";
+          'digimaster_custom_text'
+        )
+
+        ||
+
+        '';
 
 
       if (count) {
 
         count.textContent =
+
           `${textarea.value.length} caracteres`;
 
       }
@@ -2166,19 +3168,23 @@ function installPracticeEnhancements() {
 
       textarea.addEventListener(
 
-        "input",
+        'input',
 
         () => {
 
           localStorage.setItem(
-            "digimaster_custom_text",
+
+            'digimaster_custom_text',
+
             textarea.value
+
           );
 
 
           if (count) {
 
             count.textContent =
+
               `${textarea.value.length} caracteres`;
 
           }
@@ -2192,25 +3198,27 @@ function installPracticeEnhancements() {
 
     panel
       .querySelector(
-        "#customApplyBtn"
+        '#customApplyBtn'
       )
       ?.addEventListener(
 
-        "click",
+        'click',
 
         () => {
 
           if (
+
             !textarea
               ?.value
               .trim()
+
           ) {
 
-            window.showToast?.(
-              "⚠️ Digite ou cole um texto primeiro."
-            );
-
-            return;
+            return window
+              .showToast
+              ?.(
+                '⚠️ Digite ou cole um texto primeiro.'
+              );
 
           }
 
@@ -2218,7 +3226,7 @@ function installPracticeEnhancements() {
           if (modeSelect) {
 
             modeSelect.value =
-              "custom";
+              'custom';
 
           }
 
@@ -2226,12 +3234,16 @@ function installPracticeEnhancements() {
           updateCustomTextVisibility();
 
 
-          window.changeMode?.();
+          window
+            .changeMode
+            ?.();
 
 
-          window.showToast?.(
-            "📝 Texto personalizado aplicado!"
-          );
+          window
+            .showToast
+            ?.(
+              '📝 Texto personalizado aplicado!'
+            );
 
         }
 
@@ -2242,26 +3254,35 @@ function installPracticeEnhancements() {
 
   modeSelect
     ?.addEventListener(
-      "change",
+
+      'change',
+
       updateCustomTextVisibility
+
     );
 
 
   updateCustomTextVisibility();
 
 
-  // -------------------------
-  // CONTROLAR TEXTOS
-  // -------------------------
+  // =====================================
+  // MODIFICAR GET RANDOM TEXT
+  // =====================================
 
   const originalGetRandomText =
+
     window.getRandomText;
 
 
   if (
+
     typeof originalGetRandomText ===
-      "function" &&
+      'function'
+
+    &&
+
     !window.__digimasterTextModeInstalled
+
   ) {
 
     window.__digimasterTextModeInstalled =
@@ -2269,128 +3290,172 @@ function installPracticeEnhancements() {
 
 
     window.getRandomText =
-      function (level) {
+
+      function (
+        level
+      ) {
 
         const mode =
+
           document
             .getElementById(
-              "modeSelect"
+              'modeSelect'
             )
-            ?.value ||
-          "words";
+            ?.value
+
+          ||
+
+          'words';
 
 
         const safeLevel =
-          EXTRA_TEXTS[level]
-            ? level
-            : "intermediario";
+
+          EXTRA_TEXTS[
+            level
+          ]
+
+            ?
+
+            level
+
+            :
+
+            'intermediario';
 
 
-        // TEXTO PERSONALIZADO
+        // =================================
+        // PERSONALIZADO
+        // =================================
 
         if (
           mode ===
-          "custom"
+          'custom'
         ) {
 
-          const raw =
-            document
-              .getElementById(
-                "customPracticeText"
-              )
-              ?.value ||
-            "";
-
-
           const clean =
-            raw
+
+            (
+
+              document
+                .getElementById(
+                  'customPracticeText'
+                )
+                ?.value
+
+              ||
+
+              ''
+
+            )
+
               .replace(
                 /\s+/g,
-                " "
+                ' '
               )
+
               .trim();
 
 
           return (
-            clean ||
+
+            clean
+
+            ||
+
             originalGetRandomText(
               level
             )
+
           );
 
         }
 
 
-        // TEXTO LONGO
+        // =================================
+        // TEXTO
+        // =================================
 
         if (
           mode ===
-          "text"
+          'text'
         ) {
 
           return randomFrom(
+
             EXTRA_TEXTS[
               safeLevel
             ]
+
           );
 
         }
 
 
+        // =================================
         // TEMPO LIVRE
+        // =================================
 
         if (
           mode ===
-          "time"
+          'time'
         ) {
-
-          const pool =
-            EXTRA_TEXTS[
-              safeLevel
-            ];
-
 
           return [
 
-            randomFrom(pool),
-
-            randomFrom(pool),
-
-            randomFrom(pool)
-
-          ].join(" ");
-
-        }
-
-
-        // PALAVRAS
-
-        if (
-          mode ===
-            "words" &&
-          EXTRA_WORDS[
-            safeLevel
-          ]
-        ) {
-
-          return (
-            Math.random() <
-            0.7
-          )
-
-            ?
+            randomFrom(
+              EXTRA_TEXTS[
+                safeLevel
+              ]
+            ),
 
             randomFrom(
-              EXTRA_WORDS[
+              EXTRA_TEXTS[
+                safeLevel
+              ]
+            ),
+
+            randomFrom(
+              EXTRA_TEXTS[
                 safeLevel
               ]
             )
 
-            :
+          ].join(
+            ' '
+          );
 
-            originalGetRandomText(
-              level
-            );
+        }
+
+
+        // =================================
+        // PALAVRAS
+        // =================================
+
+        if (
+
+          mode ===
+            'words'
+
+          &&
+
+          EXTRA_WORDS[
+            safeLevel
+          ]
+
+          &&
+
+          Math.random() <
+          .7
+
+        ) {
+
+          return randomFrom(
+
+            EXTRA_WORDS[
+              safeLevel
+            ]
+
+          );
 
         }
 
@@ -2407,1290 +3472,17 @@ function installPracticeEnhancements() {
 
 
 // =========================================
-// MOSTRAR TEXTO PERSONALIZADO
-// =========================================
-
-function updateCustomTextVisibility() {
-
-  const panel =
-    document.getElementById(
-      "customTextPanel"
-    );
-
-
-  const mode =
-    document
-      .getElementById(
-        "modeSelect"
-      )
-      ?.value;
-
-
-  if (panel) {
-
-    panel.style.display =
-      mode === "custom"
-        ? "block"
-        : "none";
-
-  }
-
-}
-
-
-// =========================================
-// 20 NOVAS LIÇÕES
-// =========================================
-
-function extendLessonsCatalog() {
-
-  try {
-
-    if (
-      typeof LESSONS ===
-      "undefined"
-    ) {
-
-      return;
-
-    }
-
-
-    const extraLessons = {
-
-      // =====================
-      // BÁSICO
-      // =====================
-
-      basico: [
-
-        {
-
-          id: "b11",
-
-          num: 11,
-
-          icon: "🔁",
-
-          title:
-            "Consolidação de Teclas",
-
-          desc:
-            "Reforce todas as fileiras com sequências variadas.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "asdf jkl qwer uiop zxcv nm casa mesa sala porta janela livro tecla mouse tela curso aluno pratica ritmo foco",
-
-          xp: 120,
-
-          tip:
-            "Volte sempre para a posição home."
-
-        },
-
-
-        {
-
-          id: "b12",
-
-          num: 12,
-
-          icon: "🧩",
-
-          title:
-            "Palavras do Cotidiano",
-
-          desc:
-            "Treine palavras comuns e memória muscular.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "casa escola trabalho amigo familia mercado cidade rua bairro telefone mensagem arquivo pasta agenda tarefa cliente produto",
-
-          xp: 120,
-
-          tip:
-            "Leia a próxima palavra enquanto termina a atual."
-
-        },
-
-
-        {
-
-          id: "b13",
-
-          num: 13,
-
-          icon: "💼",
-
-          title:
-            "Vocabulário de Trabalho",
-
-          desc:
-            "Palavras usadas em atendimento e administração.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "nome cadastro cliente pedido valor prazo caixa venda compra estoque conta ficha nota curso aula prova equipe meta",
-
-          xp: 130,
-
-          tip:
-            "Priorize precisão nos registros."
-
-        },
-
-
-        {
-
-          id: "b14",
-
-          num: 14,
-
-          icon: "✍️",
-
-          title:
-            "Frases Curtas",
-
-          desc:
-            "Passe de palavras isoladas para frases completas.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "O aluno pratica todos os dias. A escola prepara para o trabalho. O cliente precisa de uma resposta clara. O arquivo deve ser salvo na pasta correta.",
-
-          xp: 140,
-
-          tip:
-            "Mantenha ritmo constante."
-
-        },
-
-
-        {
-
-          id: "b15",
-
-          num: 15,
-
-          icon: "🏁",
-
-          title:
-            "Desafio de Fluência Básica",
-
-          desc:
-            "Texto maior para consolidar o nível básico.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Digitar bem exige pratica e paciencia. No inicio o aluno deve pensar mais na precisao do que na velocidade. Com treino frequente os dedos aprendem o caminho das teclas e o texto passa a fluir com mais naturalidade.",
-
-          xp: 220,
-
-          tip:
-            "Evite olhar para o teclado.",
-
-          isChallenge:
-            true
-
-        }
-
-      ],
-
-
-      // =====================
-      // INTERMEDIÁRIO
-      // =====================
-
-      intermediario: [
-
-        {
-
-          id: "i9",
-
-          num: 9,
-
-          icon: "📧",
-
-          title:
-            "E-mails Profissionais",
-
-          desc:
-            "Pratique mensagens de trabalho.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Bom dia. Segue em anexo o relatório solicitado. Por favor confirme o recebimento e informe se precisar de algum ajuste. Ficamos à disposição para esclarecer dúvidas e dar continuidade ao atendimento.",
-
-          xp: 150,
-
-          tip:
-            "Cuide da pontuação e acentuação."
-
-        },
-
-
-        {
-
-          id: "i10",
-
-          num: 10,
-
-          icon: "📊",
-
-          title:
-            "Rotina Administrativa",
-
-          desc:
-            "Documentos, prazos e organização.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "A rotina administrativa exige organização de documentos, atualização de cadastros, controle de prazos, comunicação com clientes e registro correto das informações nos sistemas da empresa.",
-
-          xp: 160,
-
-          tip:
-            "Mantenha velocidade constante."
-
-        },
-
-
-        {
-
-          id: "i11",
-
-          num: 11,
-
-          icon: "🛒",
-
-          title:
-            "Atendimento e Vendas",
-
-          desc:
-            "Situações comuns de contato com clientes.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Um bom atendimento começa com atenção. Registre o nome do cliente, confirme os dados, entenda a necessidade e apresente a solução com clareza. Antes de finalizar, revise valores, prazos e formas de pagamento.",
-
-          xp: 160,
-
-          tip:
-            "Precisão vale mais do que pressa."
-
-        },
-
-
-        {
-
-          id: "i12",
-
-          num: 12,
-
-          icon: "🗂️",
-
-          title:
-            "Organização Digital",
-
-          desc:
-            "Fluência com um texto mais longo.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Arquivos bem organizados economizam tempo. Use nomes claros, separe documentos por assunto e mantenha cópias de segurança dos materiais importantes. Uma estrutura simples de pastas facilita o trabalho individual e a colaboração com toda a equipe.",
-
-          xp: 170,
-
-          tip:
-            "Leia algumas palavras à frente."
-
-        },
-
-
-        {
-
-          id: "i13",
-
-          num: 13,
-
-          icon: "🏁",
-
-          title:
-            "Desafio Intermediário II",
-
-          desc:
-            "Ritmo, precisão e produtividade.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Profissionais que digitam com agilidade conseguem registrar informações, responder mensagens e trabalhar em sistemas com menos esforço. A velocidade é útil, mas deve caminhar junto com a precisão. Um dado digitado de forma errada pode gerar retrabalho e atrasos.",
-
-          xp: 260,
-
-          tip:
-            "Busque pelo menos 90% de precisão.",
-
-          isChallenge:
-            true
-
-        }
-
-      ],
-
-
-      // =====================
-      // AVANÇADO
-      // =====================
-
-      avancado: [
-
-        {
-
-          id: "a7",
-
-          num: 7,
-
-          icon: "📈",
-
-          title:
-            "Indicadores e Decisão",
-
-          desc:
-            "Análise e gestão empresarial.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Indicadores de desempenho ajudam empresas a acompanhar resultados e identificar oportunidades de melhoria. Dados de vendas, produtividade, satisfação e custos precisam ser registrados com consistência para que gestores possam comparar períodos e tomar decisões melhores.",
-
-          xp: 200,
-
-          tip:
-            "Evite acelerar em termos técnicos."
-
-        },
-
-
-        {
-
-          id: "a8",
-
-          num: 8,
-
-          icon: "☁️",
-
-          title:
-            "Computação em Nuvem",
-
-          desc:
-            "Texto técnico longo e fluido.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "A computação em nuvem permite acessar sistemas, arquivos e serviços pela internet sem depender de um único computador físico. Empresas utilizam essa estrutura para ampliar disponibilidade, facilitar colaboração e ajustar recursos conforme a demanda.",
-
-          xp: 210,
-
-          tip:
-            "Mantenha cadência estável."
-
-        },
-
-
-        {
-
-          id: "a9",
-
-          num: 9,
-
-          icon: "🛡️",
-
-          title:
-            "Cultura de Cibersegurança",
-
-          desc:
-            "Comportamento e proteção de dados.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "A segurança da informação depende de ferramentas e também do comportamento das pessoas. Senhas fortes, autenticação em dois fatores, atualizações frequentes e atenção a mensagens suspeitas reduzem riscos. Treinamento contínuo transforma cada colaborador em parte da proteção digital.",
-
-          xp: 220,
-
-          tip:
-            "Observe acentos e pontuação."
-
-        },
-
-
-        {
-
-          id: "a10",
-
-          num: 10,
-
-          icon: "🤖",
-
-          title:
-            "IA no Trabalho",
-
-          desc:
-            "Uso responsável de inteligência artificial.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "A inteligência artificial pode resumir documentos, apoiar análises, automatizar tarefas repetitivas e acelerar a criação de conteúdo. O profissional continua responsável por revisar resultados, proteger informações sensíveis e aplicar pensamento crítico antes de transformar uma sugestão automática em decisão.",
-
-          xp: 230,
-
-          tip:
-            "Mantenha precisão mesmo em alta velocidade."
-
-        },
-
-
-        {
-
-          id: "a11",
-
-          num: 11,
-
-          icon: "🏁",
-
-          title:
-            "Desafio Profissional",
-
-          desc:
-            "Tecnologia, negócios e produtividade.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "A transformação digital exige mais do que novas ferramentas. Processos precisam ser revistos, pessoas precisam aprender e informações precisam circular com qualidade. Profissionais capazes de combinar domínio tecnológico, comunicação e pensamento crítico se adaptam melhor às mudanças.",
-
-          xp: 350,
-
-          tip:
-            "Meta: 60 WPM e 95% de precisão.",
-
-          isChallenge:
-            true
-
-        }
-
-      ],
-
-
-      // =====================
-      // NÚMEROS
-      // =====================
-
-      numeros: [
-
-        {
-
-          id: "n8",
-
-          num: 8,
-
-          icon: "🧾",
-
-          title:
-            "Pedidos e Notas",
-
-          desc:
-            "Códigos, quantidades e valores.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Pedido 45821 Nota 1027 Cliente 00374 Quantidade 18 Valor unitario R$ 49,90 Total R$ 898,20 Desconto 10% Valor final R$ 808,38",
-
-          xp: 140,
-
-          tip:
-            "Confira cada número antes de avançar."
-
-        },
-
-
-        {
-
-          id: "n9",
-
-          num: 9,
-
-          icon: "📅",
-
-          title:
-            "Datas e Horários",
-
-          desc:
-            "Agenda e atendimento.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "10/08/2026 14:30 11/08/2026 08:15 17/08/2026 09:45 31/08/2026 18:00 01/09/2026 07:30 10/09/2026 16:20",
-
-          xp: 140,
-
-          tip:
-            "Cuide das barras e dos dois-pontos."
-
-        },
-
-
-        {
-
-          id: "n10",
-
-          num: 10,
-
-          icon: "📦",
-
-          title:
-            "Controle de Estoque",
-
-          desc:
-            "Entradas, saídas e saldos.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Produto 1024 Estoque inicial 1250 Entrada 375 Saida 842 Saldo 783 Custo R$ 27,45 Valor total R$ 21.493,35 Reposicao 350 unidades",
-
-          xp: 150,
-
-          tip:
-            "Atenção aos separadores decimais."
-
-        },
-
-
-        {
-
-          id: "n11",
-
-          num: 11,
-
-          icon: "💳",
-
-          title:
-            "Parcelas e Vencimentos",
-
-          desc:
-            "Valores e datas financeiras.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Total R$ 1.497,00 Entrada R$ 300,00 Saldo R$ 1.197,00 Parcela 1 R$ 399,00 10/09/2026 Parcela 2 R$ 399,00 10/10/2026 Parcela 3 R$ 399,00 10/11/2026",
-
-          xp: 160,
-
-          tip:
-            "Um caractere errado muda o valor."
-
-        },
-
-
-        {
-
-          id: "n12",
-
-          num: 12,
-
-          icon: "🏁",
-
-          title:
-            "Desafio Numérico Profissional",
-
-          desc:
-            "Documentos, contatos e valores.",
-
-          keys: [],
-
-          homeKeys:
-            [
-              "a",
-              "s",
-              "d",
-              "f",
-              "j",
-              "k",
-              "l"
-            ],
-
-          text:
-            "Protocolo 202608104587 Cliente 00374 Tel (65) 99999-1234 CEP 78305-000 Pedido 45821 Total R$ 2.750,50 Desconto 8% Vencimento 10/09/2026 Atendimento 14:35",
-
-          xp: 260,
-
-          tip:
-            "Busque precisão máxima.",
-
-          isChallenge:
-            true
-
-        }
-
-      ]
-
-    };
-
-
-    // -------------------------
-    // ADICIONAR SEM DUPLICAR
-    // -------------------------
-
-    Object
-      .entries(
-        extraLessons
-      )
-      .forEach(
-
-        (
-          [
-            level,
-            items
-          ]
-        ) => {
-
-          if (
-            !LESSONS[level]
-              ?.lessons
-          ) {
-
-            return;
-
-          }
-
-
-          items.forEach(
-            (lesson) => {
-
-              const alreadyExists =
-                LESSONS[
-                  level
-                ]
-                  .lessons
-                  .some(
-                    (
-                      existing
-                    ) =>
-                      existing.id ===
-                      lesson.id
-                  );
-
-
-              if (
-                !alreadyExists
-              ) {
-
-                LESSONS[
-                  level
-                ]
-                  .lessons
-                  .push(
-                    lesson
-                  );
-
-              }
-
-            }
-          );
-
-        }
-
-      );
-
-  }
-
-  catch (error) {
-
-    console.warn(
-      "Não foi possível adicionar novas lições:",
-      error
-    );
-
-  }
-
-}
-
-
-// =========================================
-// DASHBOARD ADMINISTRATIVO
-// =========================================
-
-function enhanceAdminDashboard() {
-
-  const screen =
-    document.getElementById(
-      "screen-admin"
-    );
-
-
-  if (
-    !screen ||
-    screen.dataset.enhanced ===
-      "1"
-  ) {
-
-    return;
-
-  }
-
-
-  screen.dataset.enhanced =
-    "1";
-
-
-  screen.innerHTML = `
-
-    <div class="admin-wrapper">
-
-      <div class="admin-header">
-
-        <h2
-          class="section-title"
-          style="
-            margin-top:0;
-            margin-bottom:8px
-          "
-        >
-          👨‍🏫 Dashboard Administrativo
-        </h2>
-
-        <p
-          style="
-            color:var(--text2);
-            font-size:14px;
-            margin-bottom:18px
-          "
-        >
-          Acompanhe atividade, velocidade,
-          precisão e evolução dos alunos.
-        </p>
-
-      </div>
-
-
-      <div
-        class="admin-summary"
-        style="
-          grid-template-columns:
-          repeat(
-            auto-fit,
-            minmax(
-              150px,
-              1fr
-            )
-          )
-        "
-      >
-
-        <div class="admin-stat-card">
-
-          <div
-            class="admin-stat-val"
-            id="adminTotalAlunos"
-          >
-            —
-          </div>
-
-          <div class="admin-stat-label">
-            Alunos
-          </div>
-
-        </div>
-
-
-        <div class="admin-stat-card">
-
-          <div
-            class="admin-stat-val"
-            id="adminMediaWpm"
-          >
-            —
-          </div>
-
-          <div class="admin-stat-label">
-            WPM médio
-          </div>
-
-        </div>
-
-
-        <div class="admin-stat-card">
-
-          <div
-            class="admin-stat-val"
-            id="adminMediaAcc"
-          >
-            —
-          </div>
-
-          <div class="admin-stat-label">
-            Precisão média
-          </div>
-
-        </div>
-
-
-        <div class="admin-stat-card">
-
-          <div
-            class="admin-stat-val"
-            id="adminTotalSessoes"
-          >
-            —
-          </div>
-
-          <div class="admin-stat-label">
-            Sessões
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-toolbar">
-
-        <input
-          class="admin-search"
-          type="search"
-          placeholder="Buscar por nome ou e-mail"
-          oninput="
-            filterAdminTable(
-              this.value
-            )
-          "
-        >
-
-
-        <div class="admin-sort-group">
-
-          <button
-            class="rank-filter-btn active"
-            type="button"
-            onclick="
-              sortAdmin(
-                'wpm',
-                this
-              )
-            "
-          >
-            WPM
-          </button>
-
-
-          <button
-            class="rank-filter-btn"
-            type="button"
-            onclick="
-              sortAdmin(
-                'accuracy',
-                this
-              )
-            "
-          >
-            Precisão
-          </button>
-
-
-          <button
-            class="rank-filter-btn"
-            type="button"
-            onclick="
-              sortAdmin(
-                'sessions',
-                this
-              )
-            "
-          >
-            Sessões
-          </button>
-
-
-          <button
-            class="rank-filter-btn"
-            type="button"
-            onclick="
-              sortAdmin(
-                'last',
-                this
-              )
-            "
-          >
-            Atividade
-          </button>
-
-        </div>
-
-
-        <div class="admin-actions">
-
-          <button
-            class="btn-secondary"
-            type="button"
-            onclick="
-              loadAdminData()
-            "
-          >
-            🔄 Atualizar
-          </button>
-
-
-          <button
-            class="btn-secondary"
-            type="button"
-            onclick="
-              exportAdminCSV()
-            "
-          >
-            📥 CSV
-          </button>
-
-        </div>
-
-      </div>
-
-
-      <div class="admin-table-wrap">
-
-        <table class="admin-table">
-
-          <thead>
-
-            <tr>
-
-              <th>
-                #
-              </th>
-
-              <th>
-                Aluno
-              </th>
-
-              <th>
-                E-mail
-              </th>
-
-              <th>
-                Melhor WPM
-              </th>
-
-              <th>
-                Precisão
-              </th>
-
-              <th>
-                Sessões
-              </th>
-
-              <th>
-                Última atividade
-              </th>
-
-              <th>
-                Status
-              </th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody id="adminBody">
-          </tbody>
-
-        </table>
-
-
-        <div
-          class="admin-empty"
-          id="adminEmpty"
-          style="display:none"
-        >
-          Nenhum aluno cadastrado ainda.
-        </div>
-
-      </div>
-
-    </div>
-
-
-    <div
-      class="admin-detail-overlay"
-      id="adminDetailModal"
-      onclick="
-        if(
-          event.target === this
-        )
-        closeAdminDetail()
-      "
-    >
-
-      <div class="admin-detail-card">
-
-        <button
-          class="admin-detail-close"
-          type="button"
-          onclick="
-            closeAdminDetail()
-          "
-        >
-          ✕
-        </button>
-
-        <div id="adminDetailContent">
-        </div>
-
-      </div>
-
-    </div>
-
-  `;
-
-}
-
-
-// =========================================
 // ESTILOS EXTRAS
 // =========================================
 
-function injectEnhancementStyles() {
+function injectStyles() {
 
   if (
+
     document.getElementById(
-      "digimasterEnhancementStyles"
+      'digimasterFirebaseStyles'
     )
+
   ) {
 
     return;
@@ -3699,37 +3491,28 @@ function injectEnhancementStyles() {
 
 
   const style =
+
     document.createElement(
-      "style"
+      'style'
     );
 
 
   style.id =
-    "digimasterEnhancementStyles";
+    'digimasterFirebaseStyles';
 
 
   style.textContent = `
 
-    .dm-mobile-signout{
+    .dm-mobile-signout {
 
-      display:none;
+      display: none;
 
       background:
-        rgba(
-          255,
-          45,
-          120,
-          .08
-        );
+        rgba(255,45,120,.08);
 
       border:
         1px solid
-        rgba(
-          255,
-          45,
-          120,
-          .35
-        );
+        rgba(255,45,120,.35);
 
       color:
         var(--wrong);
@@ -3755,9 +3538,10 @@ function injectEnhancementStyles() {
     }
 
 
-    .custom-text-panel{
+    .custom-text-panel {
 
-      display:none;
+      display:
+        none;
 
       background:
         var(--bg2);
@@ -3779,11 +3563,13 @@ function injectEnhancementStyles() {
 
 
     .custom-text-head,
-    .custom-text-actions{
+    .custom-text-actions {
 
-      display:flex;
+      display:
+        flex;
 
-      align-items:center;
+      align-items:
+        center;
 
       justify-content:
         space-between;
@@ -3797,9 +3583,10 @@ function injectEnhancementStyles() {
     }
 
 
-    .custom-text-head > div{
+    .custom-text-head > div {
 
-      display:flex;
+      display:
+        flex;
 
       flex-direction:
         column;
@@ -3810,7 +3597,7 @@ function injectEnhancementStyles() {
     }
 
 
-    .custom-text-head strong{
+    .custom-text-head strong {
 
       font-family:
         var(--font-ui);
@@ -3818,14 +3605,11 @@ function injectEnhancementStyles() {
       font-size:
         15px;
 
-      color:
-        var(--text);
-
     }
 
 
     .custom-text-head span,
-    .custom-text-actions span{
+    .custom-text-actions span {
 
       font-size:
         12px;
@@ -3836,7 +3620,7 @@ function injectEnhancementStyles() {
     }
 
 
-    #customPracticeText{
+    #customPracticeText {
 
       width:
         100%;
@@ -3878,208 +3662,24 @@ function injectEnhancementStyles() {
     }
 
 
-    #customPracticeText:focus{
+    #customPracticeText:focus {
 
       border-color:
         var(--accent);
 
       box-shadow:
         0 0 14px
-        rgba(
-          0,
-          207,
-          255,
-          .12
-        );
+        rgba(0,207,255,.12);
 
     }
 
 
-    .admin-toolbar{
-
-      display:flex;
-
-      align-items:
-        center;
-
-      gap:
-        10px;
-
-      flex-wrap:
-        wrap;
-
-      margin:
-        0 0 18px;
-
-    }
-
-
-    .admin-search{
-
-      flex:
-        1;
-
-      min-width:
-        230px;
-
-      background:
-        var(--bg3);
-
-      border:
-        1px solid
-        var(--border);
-
-      color:
-        var(--text);
-
-      border-radius:
-        9px;
-
-      padding:
-        10px 12px;
-
-      outline:
-        none;
-
-    }
-
-
-    .admin-search:focus{
-
-      border-color:
-        var(--accent);
-
-    }
-
-
-    .admin-sort-group,
-    .admin-actions{
-
-      display:flex;
-
-      gap:
-        7px;
-
-      flex-wrap:
-        wrap;
-
-    }
-
-
-    .admin-detail-overlay{
-
-      position:
-        fixed;
-
-      inset:
-        0;
-
-      background:
-        rgba(
-          4,
-          6,
-          12,
-          .9
-        );
-
-      backdrop-filter:
-        blur(8px);
-
-      z-index:
-        3000;
-
-      display:
-        none;
-
-      align-items:
-        center;
-
-      justify-content:
-        center;
-
-      padding:
-        20px;
-
-    }
-
-
-    .admin-detail-card{
-
-      position:
-        relative;
-
-      width:
-        min(
-          1050px,
-          96vw
-        );
-
-      max-height:
-        88vh;
-
-      overflow:
-        auto;
-
-      background:
-        var(--bg2);
-
-      border:
-        1px solid
-        var(--border2);
-
-      border-radius:
-        18px;
-
-      padding:
-        28px;
-
-      box-shadow:
-        0 30px 100px
-        rgba(
-          0,
-          0,
-          0,
-          .65
-        );
-
-    }
-
-
-    .admin-detail-close{
-
-      position:
-        absolute;
-
-      right:
-        16px;
-
-      top:
-        14px;
-
-      background:
-        transparent;
-
-      border:
-        0;
-
-      color:
-        var(--text2);
-
-      font-size:
-        18px;
-
-      cursor:
-        pointer;
-
-    }
-
-
-    @media(
+    @media (
       max-width:
       768px
-    ){
+    ) {
 
-      #authArea{
+      #authArea {
 
         display:
           none !important;
@@ -4087,7 +3687,7 @@ function injectEnhancementStyles() {
       }
 
 
-      .dm-mobile-signout{
+      .dm-mobile-signout {
 
         display:
           inline-flex;
@@ -4101,7 +3701,7 @@ function injectEnhancementStyles() {
       }
 
 
-      .header-inner{
+      .header-inner {
 
         gap:
           8px;
@@ -4112,7 +3712,7 @@ function injectEnhancementStyles() {
       }
 
 
-      .nav-tabs{
+      .nav-tabs {
 
         overflow-x:
           auto;
@@ -4126,34 +3726,10 @@ function injectEnhancementStyles() {
       }
 
 
-      .nav-tabs::-webkit-scrollbar{
+      .nav-tabs::-webkit-scrollbar {
 
         display:
           none;
-
-      }
-
-
-      .admin-toolbar{
-
-        align-items:
-          stretch;
-
-      }
-
-
-      .admin-search{
-
-        min-width:
-          100%;
-
-      }
-
-
-      .admin-detail-card{
-
-        padding:
-          22px 14px;
 
       }
 
@@ -4170,34 +3746,27 @@ function injectEnhancementStyles() {
 
 
 // =========================================
-// INICIALIZAR MELHORIAS
+// INICIALIZAÇÃO
 // =========================================
 
 function initEnhancements() {
 
-  injectEnhancementStyles();
+  injectStyles();
+
 
   installPracticeEnhancements();
-
-  extendLessonsCatalog();
-
-  enhanceAdminDashboard();
 
 }
 
 
-// =========================================
-// INICIAR
-// =========================================
-
 if (
   document.readyState ===
-  "loading"
+  'loading'
 ) {
 
   document.addEventListener(
 
-    "DOMContentLoaded",
+    'DOMContentLoaded',
 
     initEnhancements
 
