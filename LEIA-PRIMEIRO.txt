@@ -1,0 +1,14 @@
+DIGIMASTER 2.1
+===============
+
+SUBSTITUA NO REPOSITÓRIO:
+- index.html
+- js/firebase.js
+- firestore.rules
+
+PODE ADICIONAR COMO DOCUMENTAÇÃO:
+- ADMIN_SETUP.md
+- UPLOAD_GITHUB.md
+
+IMPORTANTE:
+Não apague os demais arquivos do DigiMaster. Este ZIP é o pacote completo DOS ARQUIVOS ALTERADOS, pronto para ser aplicado por cima do repositório atual.

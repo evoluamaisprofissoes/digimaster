@@ -1073,6 +1073,102 @@ kbd{background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid
   .hands-modal { padding: 20px 16px; }
 }
 
+
+/* =========================================
+   CERTIFICADO + LOGOFF — ADICIONADO
+   ========================================= */
+#authArea.auth-area-actions,
+.auth-area-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.header-logout-btn {
+  min-height: 34px;
+  white-space: nowrap;
+}
+.certificate-panel {
+  background: linear-gradient(135deg, rgba(0,207,255,0.06), rgba(168,85,247,0.06));
+  border: 1px solid rgba(0,207,255,0.22);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.certificate-panel-title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.certificate-panel-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.certificate-meter {
+  min-width: 210px;
+  flex: 1;
+  max-width: 360px;
+}
+.certificate-meter-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-ui);
+  color: var(--text2);
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  margin-bottom: 7px;
+}
+.certificate-meter-value {
+  color: var(--accent);
+  font-family: var(--font-title);
+  font-weight: 900;
+}
+.certificate-meter-track {
+  width: 100%;
+  height: 7px;
+  background: var(--bg3);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.certificate-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--rgb-1), var(--rgb-6), var(--rgb-5), var(--rgb-4));
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+.certificate-download-btn.certificate-locked,
+button.certificate-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+}
+.certificate-download-btn.certificate-unlocked,
+button.certificate-unlocked {
+  border-color: rgba(0,255,136,0.45);
+  color: var(--correct);
+  box-shadow: 0 0 14px rgba(0,255,136,0.12);
+}
+@media(max-width:768px){
+  #authArea.auth-area-actions { display: flex; }
+  .user-name { display: none; }
+  .certificate-panel { align-items: stretch; }
+  .certificate-meter { max-width: none; }
+}
+
+
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -1101,8 +1197,9 @@ kbd{background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid
       <button class="nav-btn" id="adminNavBtn" data-screen="admin" style="display:none">👨‍🏫 Painel</button>
       <button class="nav-btn" data-screen="about">Sobre</button>
     </nav>
-    <div id="authArea">
-      <button class="btn-login" onclick="openAuthModal('login')">Entrar / Cadastrar</button>
+    <div id="authArea" class="auth-area-actions">
+      <button class="btn-login" id="btnLoginHeader" onclick="openAuthModal('login')">Entrar / Cadastrar</button>
+      <button class="btn-signout header-logout-btn" id="btnLogoutHeader" onclick="signOutUser()" style="display:none">Sair</button>
     </div>
   </div>
 </header>
@@ -1468,7 +1565,7 @@ kbd{background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid
       <div class="result-feedback" id="resultFeedback"></div>
       <div class="result-actions">
         <button class="btn-primary" onclick="resetSession()">Tentar novamente</button>
-        <button class="btn-secondary" onclick="generateCertificate()">📜 Certificado</button>
+        <button class="btn-secondary certificate-download-btn" onclick="generateCertificate()">📜 Certificado</button>
         <button class="btn-secondary" onclick="navigateTo('stats')">Ver estatísticas</button>
       </div>
     </div>
@@ -1556,8 +1653,24 @@ kbd{background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid
       </div>
     </div>
 
+    <div class="certificate-panel" id="certificatePanel">
+      <div>
+        <div class="certificate-panel-title">📜 Certificado automático</div>
+        <div class="certificate-panel-text" id="certificateStatusText">Conclua pelo menos 70% das lições para liberar o download em PDF.</div>
+      </div>
+      <div class="certificate-meter" aria-label="Progresso do certificado">
+        <div class="certificate-meter-top">
+          <span>Progresso do curso</span>
+          <span class="certificate-meter-value" id="certificateProgressText">0%</span>
+        </div>
+        <div class="certificate-meter-track">
+          <div class="certificate-meter-fill" id="certificateProgressFill"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="stats-actions">
-      <button class="btn-secondary" onclick="generateCertificate()">📜 Gerar Certificado</button>
+      <button class="btn-secondary certificate-download-btn" onclick="generateCertificate()">📜 Gerar Certificado</button>
       <button class="btn-danger" onclick="clearStats()">🗑️ Apagar histórico</button>
     </div>
   </div>
@@ -1729,9 +1842,525 @@ kbd{background:var(--bg3);border:1px solid var(--border);border-bottom:2px solid
 <script src="js/keyboard.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/sounds.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="js/certificate.js"></script>
 <script src="js/ranking.js"></script>
 <script src="js/app.js"></script>
 <script type="module" src="js/firebase.js"></script>
+
+<script>
+/* =========================================
+   DigiMaster — Logoff + certificado automático
+   Liberação do certificado: mínimo de 70% do curso concluído.
+   ========================================= */
+(function () {
+  "use strict";
+
+  const CERTIFICATE_MIN_PROGRESS = 70;
+  const CERTIFICATE_COURSE_NAME = "DigiMaster — Curso de Digitação";
+  const CERTIFICATE_ISSUER = "Evolua+ Profissões";
+
+  function safeParseJSON(value) {
+    try { return JSON.parse(value); } catch (_) { return null; }
+  }
+
+  function escapeHTML(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function sanitizeFilename(value) {
+    return String(value || "aluno")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "aluno";
+  }
+
+  function getFirebaseUserFromStorage() {
+    try {
+      const stores = [window.localStorage, window.sessionStorage].filter(Boolean);
+      for (const store of stores) {
+        for (let i = 0; i < store.length; i++) {
+          const key = store.key(i) || "";
+          if (!/^firebase:authUser:/i.test(key)) continue;
+          const parsed = safeParseJSON(store.getItem(key));
+          if (parsed && (parsed.email || parsed.displayName || parsed.uid)) return parsed;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function getCurrentStudent() {
+    const candidates = [];
+    try {
+      if (window.auth && window.auth.currentUser) candidates.push(window.auth.currentUser);
+      if (window.firebaseAuth && window.firebaseAuth.currentUser) candidates.push(window.firebaseAuth.currentUser);
+      if (window.currentUser) candidates.push(window.currentUser);
+      if (window.loggedUser) candidates.push(window.loggedUser);
+      if (window.firebase && typeof window.firebase.auth === "function") {
+        const compatUser = window.firebase.auth().currentUser;
+        if (compatUser) candidates.push(compatUser);
+      }
+    } catch (_) {}
+
+    const storedUser = getFirebaseUserFromStorage();
+    if (storedUser) candidates.push(storedUser);
+
+    const user = candidates.find(Boolean) || null;
+    if (!user) return null;
+
+    const email = user.email || user.providerData?.[0]?.email || "";
+    const displayName = user.displayName || user.name || user.providerData?.[0]?.displayName || (email ? email.split("@")[0] : "Aluno");
+    const photoURL = user.photoURL || user.photoUrl || user.providerData?.[0]?.photoURL || "";
+    const uid = user.uid || user.localId || "";
+
+    return { displayName, email, photoURL, uid };
+  }
+
+  function renderLoggedOutAuthArea() {
+    const authArea = document.getElementById("authArea");
+    if (!authArea) return;
+    authArea.classList.add("auth-area-actions");
+    authArea.innerHTML = '<button class="btn-login" id="btnLoginHeader" onclick="openAuthModal(\'login\')">Entrar / Cadastrar</button>';
+  }
+
+  function renderLoggedInAuthArea(user) {
+    const authArea = document.getElementById("authArea");
+    if (!authArea || !user) return;
+    const initial = (user.displayName || user.email || "A").trim().charAt(0).toUpperCase() || "A";
+    const avatar = user.photoURL
+      ? `<img src="${escapeHTML(user.photoURL)}" alt="Aluno" class="user-avatar" referrerpolicy="no-referrer">`
+      : `<div class="user-avatar-placeholder">${escapeHTML(initial)}</div>`;
+
+    authArea.classList.add("auth-area-actions");
+    authArea.innerHTML = `
+      <div class="user-chip">
+        ${avatar}
+        <span class="user-name" title="${escapeHTML(user.displayName || user.email)}">${escapeHTML(user.displayName || user.email || "Aluno")}</span>
+        <button type="button" class="btn-signout header-logout-btn" data-digimaster-logout>Sair</button>
+      </div>`;
+  }
+
+  function refreshAuthArea() {
+    const user = getCurrentStudent();
+    if (user && (user.email || user.uid || user.displayName)) {
+      renderLoggedInAuthArea(user);
+    } else {
+      const logoutBtn = document.getElementById("btnLogoutHeader");
+      const loginBtn = document.getElementById("btnLoginHeader");
+      if (logoutBtn) logoutBtn.style.display = "none";
+      if (loginBtn) loginBtn.style.display = "inline-flex";
+    }
+
+    document.querySelectorAll("[data-digimaster-logout], #btnLogoutHeader, .btn-signout").forEach((btn) => {
+      btn.onclick = window.signOutUser;
+    });
+  }
+
+  async function deleteIndexedDB(name) {
+    return new Promise((resolve) => {
+      if (!name || !window.indexedDB) return resolve();
+      const request = window.indexedDB.deleteDatabase(name);
+      request.onsuccess = request.onerror = request.onblocked = function () { resolve(); };
+    });
+  }
+
+  async function clearFirebaseAuthPersistenceFallback() {
+    try {
+      [window.localStorage, window.sessionStorage].filter(Boolean).forEach((store) => {
+        Object.keys(store).forEach((key) => {
+          if (/^firebase:authUser:/i.test(key) || /firebase.*auth/i.test(key) || /digimaster.*user/i.test(key)) {
+            store.removeItem(key);
+          }
+        });
+      });
+    } catch (_) {}
+
+    try {
+      if (window.indexedDB && typeof window.indexedDB.databases === "function") {
+        const dbs = await window.indexedDB.databases();
+        await Promise.all((dbs || [])
+          .map((db) => db && db.name)
+          .filter((name) => /firebase|auth/i.test(name || ""))
+          .map(deleteIndexedDB));
+      } else {
+        await deleteIndexedDB("firebaseLocalStorageDb");
+      }
+    } catch (_) {}
+  }
+
+
+
+  function patchAuthEntryPoints() {
+    ["signInWithGoogle", "signInWithEmail", "signUpWithEmail"].forEach((name) => {
+      const original = window[name];
+      if (typeof original !== "function" || original.__digimasterPatched) return;
+
+      const patched = function (...args) {
+        let result;
+        try {
+          result = original.apply(this, args);
+        } finally {
+          [600, 1600, 3000].forEach((delay) => window.setTimeout(() => {
+            refreshAuthArea();
+            updateCertificateGate();
+          }, delay));
+        }
+
+        if (result && typeof result.then === "function") {
+          return result.finally(() => {
+            [400, 1200].forEach((delay) => window.setTimeout(refreshAuthArea, delay));
+          });
+        }
+        return result;
+      };
+
+      patched.__digimasterPatched = true;
+      window[name] = patched;
+    });
+  }
+
+  window.signOutUser = async function signOutUser() {
+    const buttons = document.querySelectorAll("[data-digimaster-logout], #btnLogoutHeader, .btn-signout");
+    buttons.forEach((btn) => { btn.disabled = true; btn.textContent = "Saindo..."; });
+
+    try {
+      if (window.firebase && typeof window.firebase.auth === "function") {
+        await window.firebase.auth().signOut();
+      } else if (window.firebaseAuth && typeof window.firebaseAuth.signOut === "function") {
+        await window.firebaseAuth.signOut();
+      } else if (window.auth && typeof window.auth.signOut === "function") {
+        await window.auth.signOut();
+      } else if (typeof window.firebaseSignOut === "function" && (window.auth || window.firebaseAuth)) {
+        await window.firebaseSignOut(window.auth || window.firebaseAuth);
+      } else if (typeof window.signOut === "function" && window.signOut !== window.signOutUser) {
+        try { await window.signOut(window.auth || window.firebaseAuth); }
+        catch (_) { await window.signOut(); }
+      } else {
+        await clearFirebaseAuthPersistenceFallback();
+      }
+    } catch (err) {
+      console.warn("Falha no signOut padrão. Aplicando limpeza local de sessão.", err);
+      await clearFirebaseAuthPersistenceFallback();
+    }
+
+    renderLoggedOutAuthArea();
+    window.location.reload();
+  };
+
+  function getLessonProgressFromDOM() {
+    const cards = Array.from(document.querySelectorAll(".lesson-card"));
+    if (!cards.length) return null;
+
+    const completed = cards.filter((card) => {
+      const statusText = (card.textContent || "").toLowerCase();
+      return card.classList.contains("completed") ||
+        card.dataset.completed === "true" ||
+        card.getAttribute("aria-checked") === "true" ||
+        /✓|conclu/i.test(statusText);
+    }).length;
+
+    return { total: cards.length, completed, source: "DOM" };
+  }
+
+  function looksLikeLessonObject(obj) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false;
+    const keys = Object.keys(obj).map((key) => key.toLowerCase());
+    const hasIdentity = keys.some((key) => ["id", "title", "titulo", "name", "nome"].includes(key));
+    const hasLessonContent = keys.some((key) => ["text", "texto", "words", "palavras", "keys", "teclas", "xp", "description", "descricao"].includes(key));
+    return hasIdentity && hasLessonContent;
+  }
+
+  function countLessons(value, seen = new WeakSet()) {
+    if (!value || typeof value !== "object") return 0;
+    if (seen.has(value)) return 0;
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      if (value.length && value.every((item) => looksLikeLessonObject(item))) return value.length;
+      return value.reduce((sum, item) => sum + countLessons(item, seen), 0);
+    }
+
+    if (looksLikeLessonObject(value)) return 1;
+    return Object.values(value).reduce((sum, item) => sum + countLessons(item, seen), 0);
+  }
+
+  function getTotalLessonsFromGlobals() {
+    const names = [
+      "LESSONS", "lessons", "LESSONS_DATA", "lessonsData", "lessonData",
+      "COURSE_LESSONS", "courseLessons", "DIGIMASTER_LESSONS", "DigiMasterLessons"
+    ];
+    let total = 0;
+    names.forEach((name) => {
+      try { total = Math.max(total, countLessons(window[name])); } catch (_) {}
+    });
+    return total;
+  }
+
+  function addCompletedId(set, item) {
+    if (item == null) return;
+    if (typeof item === "string" || typeof item === "number") {
+      set.add(String(item));
+      return;
+    }
+    if (typeof item === "object") {
+      const id = item.id || item.lessonId || item.key || item.slug || item.title || item.titulo || item.name || item.nome;
+      const isDone = item.completed === true || item.done === true || item.concluida === true || item.concluido === true || Number(item.progress || item.percent || 0) >= 100;
+      if (id && isDone) set.add(String(id));
+    }
+  }
+
+  function readProgressCandidate(obj) {
+    if (!obj || typeof obj !== "object") return null;
+
+    if (Array.isArray(obj)) {
+      const completedSet = new Set();
+      obj.forEach((item) => addCompletedId(completedSet, item));
+      if (completedSet.size) return { completed: completedSet.size, total: obj.length };
+      return null;
+    }
+
+    const values = Object.values(obj);
+    if (!values.length) return null;
+
+    let total = 0;
+    let completed = 0;
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "boolean") {
+        total++;
+        if (value) completed++;
+      } else if (typeof value === "number") {
+        total++;
+        if (value >= 100 || value === 1) completed++;
+      } else if (value && typeof value === "object") {
+        const nestedDone = value.completed === true || value.done === true || value.concluida === true || value.concluido === true || Number(value.progress || value.percent || 0) >= 100;
+        const hasLessonHint = /lesson|licao|li[cç][aã]o|aula/i.test(key) || value.id || value.lessonId || value.title || value.titulo;
+        if (hasLessonHint) {
+          total++;
+          if (nestedDone) completed++;
+        }
+      }
+    }
+
+    return total ? { completed, total } : null;
+  }
+
+  function getLessonProgressFromStorage() {
+    const completedIds = new Set();
+    let bestCandidate = null;
+
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || "";
+        const raw = localStorage.getItem(key);
+        const parsed = safeParseJSON(raw);
+        const keyLooksRelevant = /digimaster|lesson|licao|li[cç][aã]o|curso|course|progress|completed|conclu/i.test(key);
+        if (!keyLooksRelevant && !parsed) continue;
+
+        if (/completed|conclu/i.test(key)) {
+          if (Array.isArray(parsed)) parsed.forEach((item) => addCompletedId(completedIds, item));
+          else if (parsed && typeof parsed === "object") Object.entries(parsed).forEach(([id, value]) => {
+            if (value === true || value?.completed === true || value?.done === true || value?.concluida === true || value?.concluido === true) completedIds.add(String(id));
+          });
+        }
+
+        if (parsed && typeof parsed === "object") {
+          const candidate = readProgressCandidate(parsed);
+          if (candidate && (!bestCandidate || candidate.total > bestCandidate.total)) {
+            bestCandidate = candidate;
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (bestCandidate && bestCandidate.total) {
+      return { ...bestCandidate, source: "localStorage" };
+    }
+
+    if (completedIds.size) {
+      const totalFromGlobals = getTotalLessonsFromGlobals();
+      return { completed: completedIds.size, total: Math.max(totalFromGlobals, completedIds.size), source: "localStorage" };
+    }
+
+    return null;
+  }
+
+  function getCourseProgress() {
+    const domProgress = getLessonProgressFromDOM();
+    const storageProgress = getLessonProgressFromStorage();
+    const totalFromGlobals = getTotalLessonsFromGlobals();
+
+    const candidates = [domProgress, storageProgress].filter(Boolean);
+    let chosen = candidates.sort((a, b) => (b.total || 0) - (a.total || 0))[0] || null;
+
+    if (!chosen && totalFromGlobals) {
+      chosen = { completed: 0, total: totalFromGlobals, source: "globals" };
+    }
+
+    if (!chosen) chosen = { completed: 0, total: 0, source: "none" };
+    if (totalFromGlobals && totalFromGlobals > chosen.total) chosen.total = totalFromGlobals;
+
+    chosen.completed = Math.max(0, Number(chosen.completed || 0));
+    chosen.total = Math.max(0, Number(chosen.total || 0));
+    chosen.percent = chosen.total ? Math.min(100, Math.round((chosen.completed / chosen.total) * 100)) : 0;
+    chosen.isUnlocked = chosen.percent >= CERTIFICATE_MIN_PROGRESS;
+    return chosen;
+  }
+
+  function updateCertificateGate() {
+    const progress = getCourseProgress();
+    const buttons = document.querySelectorAll(".certificate-download-btn, button[onclick*='generateCertificate']");
+
+    buttons.forEach((button) => {
+      const unlocked = progress.isUnlocked;
+      button.disabled = !unlocked;
+      button.classList.toggle("certificate-locked", !unlocked);
+      button.classList.toggle("certificate-unlocked", unlocked);
+      button.title = unlocked
+        ? "Certificado liberado para download em PDF."
+        : `Certificado bloqueado. Conclua pelo menos ${CERTIFICATE_MIN_PROGRESS}% do curso.`;
+    });
+
+    const progressText = document.getElementById("certificateProgressText");
+    const progressFill = document.getElementById("certificateProgressFill");
+    const statusText = document.getElementById("certificateStatusText");
+
+    if (progressText) progressText.textContent = `${progress.percent}%`;
+    if (progressFill) progressFill.style.width = `${progress.percent}%`;
+    if (statusText) {
+      if (progress.isUnlocked) {
+        statusText.textContent = `Liberado! ${progress.completed} de ${progress.total || "?"} lições concluídas. Clique em “Gerar Certificado” para baixar o PDF.`;
+      } else if (progress.total) {
+        statusText.textContent = `Bloqueado: ${progress.completed} de ${progress.total} lições concluídas. É necessário atingir pelo menos ${CERTIFICATE_MIN_PROGRESS}%.`;
+      } else {
+        statusText.textContent = `Bloqueado: conclua pelo menos ${CERTIFICATE_MIN_PROGRESS}% das lições para liberar o download em PDF.`;
+      }
+    }
+
+    return progress;
+  }
+
+  window.getDigiMasterCourseProgress = getCourseProgress;
+  window.updateCertificateGate = updateCertificateGate;
+
+  window.generateCertificate = function generateCertificate() {
+    const progress = updateCertificateGate();
+
+    if (!progress.isUnlocked) {
+      alert(`Certificado ainda bloqueado. Você precisa concluir pelo menos ${CERTIFICATE_MIN_PROGRESS}% do curso. Progresso atual: ${progress.percent}%.`);
+      return;
+    }
+
+    const student = getCurrentStudent();
+    if (!student || !student.email) {
+      alert("Faça login para gerar o certificado com os dados do aluno.");
+      if (typeof window.openAuthModal === "function") window.openAuthModal("login");
+      return;
+    }
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("Biblioteca de PDF não carregada. Verifique sua conexão com a internet e tente novamente.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const today = new Date();
+    const dateBR = today.toLocaleDateString("pt-BR");
+    const validationCode = `DGM-${(student.uid || "ALUNO").slice(0, 8).toUpperCase()}-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}-${progress.percent}`;
+
+    doc.setFillColor(6, 8, 15);
+    doc.rect(0, 0, pageWidth, pageHeight, "F");
+
+    doc.setDrawColor(0, 207, 255);
+    doc.setLineWidth(1.4);
+    doc.rect(12, 12, pageWidth - 24, pageHeight - 24);
+    doc.setDrawColor(168, 85, 247);
+    doc.setLineWidth(0.4);
+    doc.rect(18, 18, pageWidth - 36, pageHeight - 36);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 207, 255);
+    doc.setFontSize(15);
+    doc.text(CERTIFICATE_ISSUER, pageWidth / 2, 32, { align: "center" });
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(30);
+    doc.text("CERTIFICADO DE CONCLUSÃO", pageWidth / 2, 55, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(210, 225, 255);
+    doc.text("Certificamos que", pageWidth / 2, 78, { align: "center" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(25);
+    doc.setTextColor(0, 255, 136);
+    doc.text(student.displayName || "Aluno", pageWidth / 2, 96, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(14);
+    doc.setTextColor(232, 240, 255);
+    const description = `concluiu pelo menos ${CERTIFICATE_MIN_PROGRESS}% do curso ${CERTIFICATE_COURSE_NAME}, atingindo ${progress.percent}% de progresso registrado na plataforma.`;
+    const lines = doc.splitTextToSize(description, 220);
+    doc.text(lines, pageWidth / 2, 116, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.setTextColor(122, 142, 184);
+    doc.text(`E-mail do aluno: ${student.email}`, pageWidth / 2, 140, { align: "center" });
+    doc.text(`Data de emissão: ${dateBR}`, pageWidth / 2, 151, { align: "center" });
+    doc.text(`Código de validação: ${validationCode}`, pageWidth / 2, 162, { align: "center" });
+
+    doc.setDrawColor(0, 207, 255);
+    doc.line(92, 181, 205, 181);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(255, 255, 255);
+    doc.text(CERTIFICATE_ISSUER, pageWidth / 2, 190, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(122, 142, 184);
+    doc.text("Curso de prática e desenvolvimento em digitação", pageWidth / 2, 197, { align: "center" });
+
+    doc.save(`Certificado-DigiMaster-${sanitizeFilename(student.displayName || student.email)}.pdf`);
+  };
+
+  function bootEnhancements() {
+    patchAuthEntryPoints();
+    refreshAuthArea();
+    updateCertificateGate();
+
+    const observer = new MutationObserver(() => {
+      updateCertificateGate();
+      document.querySelectorAll("[data-digimaster-logout], #btnLogoutHeader, .btn-signout").forEach((btn) => {
+        btn.onclick = window.signOutUser;
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "data-completed", "aria-checked"] });
+
+    [800, 1800, 3500, 6000].forEach((delay) => window.setTimeout(() => {
+      patchAuthEntryPoints();
+      refreshAuthArea();
+      updateCertificateGate();
+    }, delay));
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootEnhancements);
+  } else {
+    bootEnhancements();
+  }
+})();
+</script>
+
 </body>
 </html>
